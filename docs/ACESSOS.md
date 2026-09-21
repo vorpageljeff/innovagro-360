@@ -20,6 +20,6 @@ A vinculação gerou `.env.local`, ignorado pelo Git. Não compartilhar seu cont
 
 ## Verificação e limites
 
-Deploy de produção Ready; fluxo login → dashboard → CRM verificado. O login atual é de demonstração. A versão local do módulo CRM persiste em localStorage e a API não possui rotas de leads. A vinculação Vercel não conecta um banco de dados nem implementa importação de leads.
+Deploy de produção Ready; fluxo login → dashboard → CRM verificado. O login atual é de demonstração. A versão publicada usa o CRM demonstrativo. A adaptação em desenvolvimento agora possui rotas autenticadas de leads e histórico, descritas em `CRM_PROSPECCAO.md`; ainda não foi publicada nem conectada ao backend existente. A vinculação Vercel não conecta um banco de dados nem implementa importação de leads.
 
 Critérios e candidatos da prospecção estão em `../Voragon_Comercial` (pasta irmã deste repositório). Antes de importar dados reais, implementar armazenamento central autenticado, isolamento por organização e prevenção de duplicatas. Nenhum lead foi importado nesta configuração de acesso.
