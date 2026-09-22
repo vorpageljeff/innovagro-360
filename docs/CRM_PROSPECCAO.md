@@ -42,3 +42,11 @@ O arquivo de importação contém dados comerciais e permanece fora do repositó
 Em 21/09/2026: build Next.js e TypeScript passaram; 16 testes de regras, validação e proteção das rotas passaram em Python 3.11 (o projeto declara Python >=3.12). A tela foi conferida no navegador em desktop e largura de 390px, sem erros JavaScript e sem armazenamento local de contatos. O estado sem API impede gravações e informa a ausência de conexão.
 
 A migração não foi executada contra PostgreSQL real. Autenticação, gravação e importação completas no ambiente remoto permanecem pendentes. O código será mantido em branch separada até a conexão com o backend ser validada.
+
+## Prévia publicada em 21/09/2026
+
+Código: `255354fc147d8ac17619f133879a05ff499030dc`, disponível no Git remoto em `feat/crm-acompanhamento`.
+
+Prévia Vercel Ready: https://innovagro-360-1okwr2cpr-vorpageljeffs-projects.vercel.app/crm (protegida pelo acesso da equipe Vercel). Build remoto passou. `/login` respondeu HTTP 200; `/api/crm/leads` respondeu HTTP 503 com aviso de backend não conectado, como esperado sem `CRM_API_URL`.
+
+Produção não foi promovida: backend remoto, banco e acesso de deploy continuam sem identificação confirmada. Vercel production não possui variáveis de ambiente configuradas. Nenhum contato foi importado. Não declarar esta prévia como CRM operacional.
