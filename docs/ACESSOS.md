@@ -23,3 +23,9 @@ A vinculação gerou `.env.local`, ignorado pelo Git. Não compartilhar seu cont
 Deploy de produção Ready; fluxo login → dashboard → CRM verificado. O login atual é de demonstração. A versão publicada usa o CRM demonstrativo. A adaptação em desenvolvimento agora possui rotas autenticadas de leads e histórico, descritas em `CRM_PROSPECCAO.md`; ainda não foi publicada nem conectada ao backend existente. A vinculação Vercel não conecta um banco de dados nem implementa importação de leads.
 
 Critérios e candidatos da prospecção estão em `../Voragon_Comercial` (pasta irmã deste repositório). Antes de importar dados reais, implementar armazenamento central autenticado, isolamento por organização e prevenção de duplicatas. Nenhum lead foi importado nesta configuração de acesso.
+
+## VPS confirmada após acesso ao console
+
+Hostinger: `srv1964191.hstgr.cloud`, IP `2.25.189.129`. SSH funciona com usuário `innovagro` e a chave existente `~/.ssh/transboes_hostinger`. Login SSH como root é desabilitado; preservar essa proteção. O usuário pertence ao grupo Docker; sudo requer senha.
+
+Inventário remoto: aplicações `/opt/innovagro/apps/techa` e `/opt/innovagro/apps/transboes`, além de Traefik, Portainer e Uptime Kuma. Nenhum container, volume ou diretório do CRM 360 foi localizado nos caminhos inspecionados (`/opt/innovagro`, `/home/innovagro`, `/srv`). As instâncias PostgreSQL ativas listam apenas `techa_db` e `transboes`, além de `postgres`. Isso não comprova ausência em outro servidor ou serviço externo. Backend e banco específicos do CRM ainda precisam ser identificados; nenhuma migração/importação foi feita.
