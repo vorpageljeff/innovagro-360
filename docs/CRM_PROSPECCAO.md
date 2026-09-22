@@ -24,7 +24,7 @@ Importação: `{ "leads": [{ "name": "Loja exemplo", "instagram": "@loja_exemplo
 
 `event_key` é obrigatório e estável por envio, não por tentativa de importação. Reimportar o mesmo evento não cria novo histórico. O perfil é único dentro de cada organização. Importar registro histórico não deve apagar respostas já anotadas. Erro de importação impede commit do lote.
 
-## Publicação pendente
+## Histórico: pendências antes da instalação
 
 O domínio, acesso e banco do backend existente ainda precisam ser verificados. Não aplicar a migração nem importar leads antes de conferir o ambiente e backup externo. A existência da hospedagem foi informada pelo usuário; sua ausência não foi presumida.
 
@@ -50,3 +50,7 @@ Código: `255354fc147d8ac17619f133879a05ff499030dc`, disponível no Git remoto e
 Prévia Vercel Ready: https://innovagro-360-1okwr2cpr-vorpageljeffs-projects.vercel.app/crm (protegida pelo acesso da equipe Vercel). Build remoto passou. `/login` respondeu HTTP 200; `/api/crm/leads` respondeu HTTP 503 com aviso de backend não conectado, como esperado sem `CRM_API_URL`.
 
 Produção não foi promovida: backend remoto, banco e acesso de deploy continuam sem identificação confirmada. Vercel production não possui variáveis de ambiente configuradas. Nenhum contato foi importado. Não declarar esta prévia como CRM operacional.
+
+## Instalação realizada
+
+Backend instalado na Hostinger e importação dos dez contatos confirmada. Consulte `ACESSOS.md` para endpoints, armazenamento, backup e versão. Os bloqueios descritos anteriormente são históricos.

@@ -1,27 +1,11 @@
-# Implantação de produção
+# Publicação do CRM na VPS existente
 
-## DNS
+O destino ativo é Hostinger, usuário SSH `innovagro`, aplicação `/opt/innovagro/apps/crm360`. Consulte `../docs/ACESSOS.md`.
 
-- `app.seudominio.com` aponta para a Vercel.
-- `api.seudominio.com` possui registro A para o IP público do VPS Hostinger.
+Use `docker compose -f deploy/compose.hostinger-crm.yml`. O compose usa Traefik e a rede externa `proxy` já existentes; não execute o compose antigo com Caddy em produção, pois disputaria as portas 80/443.
 
-## Backend no VPS
+Sequência: Git push do código revisado; backup externo com recuperação verificada; transferir a versão exata sem sobrescrever `.env.production`; build da API; `docker compose -f deploy/compose.hostinger-crm.yml run --rm api alembic upgrade head`; `docker compose -f deploy/compose.hostinger-crm.yml up -d`; conferir HTTPS, autenticação e banco; preview Vercel e promoção validada. Nunca remover o volume `voragon-crm_crm_postgres`.
 
-Pré-requisitos: Docker Engine, Compose plugin, Git e portas 80/443 abertas.
+Na Vercel a raiz é o repositório, com `vercel.json` configurando `apps/web`. `CRM_API_URL` é variável privada de servidor; não expor JWT ou senha via NEXT_PUBLIC. O login usa a organização `CRM_ORGANIZATION_SLUG`.
 
-1. Clone o repositório em um usuário sem privilégios de root.
-2. Copie `.env.production.example` para `.env` e gere segredos fortes.
-3. Execute `docker compose -f docker-compose.prod.yml config`.
-4. Execute `docker compose -f docker-compose.prod.yml up -d --build`.
-5. Verifique `https://api.seudominio.com/health` e os logs.
-
-PostgreSQL e Redis não publicam portas no host. Caddy emite e renova HTTPS automaticamente após o DNS apontar para o VPS.
-
-## Frontend na Vercel
-
-Crie/vincule um projeto cujo Root Directory seja `apps/web`. Cadastre `NEXT_PUBLIC_API_URL` para Production e Preview. Faça primeiro um preview, valide-o e depois promova o mesmo artefato para produção.
-
-## Atualização e rollback
-
-Atualização do backend exige `git pull`, rebuild e verificação do health endpoint. Antes de migrations destrutivas, produza backup externo. O frontend pode ser revertido instantaneamente pela Vercel.
-
+Backup: `bash deploy/backup-crm.sh`. O agendamento diário guarda snapshots na VPS; manter também cópias externas. Credenciais, dumps e relatórios comerciais ficam fora do Git.
