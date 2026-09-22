@@ -4,7 +4,7 @@ Atualizado em 22/09/2026. A política integral de Jefferson está em [AGENTE_PRO
 
 ## Procedimento
 
-1. Conferir o escopo autorizado da campanha, histórico e duplicatas por organização/perfil. O último recorte solicitado foi agro na Bahia, municípios com menos de 100 mil habitantes; consultar fonte demográfica e registrar o ano de referência. A lista geral de segmentos não inicia uma nova campanha.
+1. Conferir o escopo autorizado da campanha, histórico e duplicatas por organização/perfil. Recorte vigente confirmado por Jefferson: Nordeste e MATOPIBA, municípios com menos de 100 mil habitantes, todos os segmentos prioritários da política (não somente agro). Consultar fonte demográfica e registrar o ano de referência. Campanha atual autorizada: pesquisar 25 leads, abordar apenas os qualificados e registrar os contatos confirmados no CRM.
 2. Investigar cada empresa e registrar fontes, data da consulta e observações. Informação desconhecida recebe “não identificado”. Site não encontrado não comprova que a empresa não possui site. Não pontuar ausência sem evidência suficiente.
 3. Manter memória do cálculo: critério, pontos e evidência. Ticket médio e alto são alternativas. Não deduzir capacidade financeira, conversão ou processos internos somente de seguidores ou aparência. Critérios subjetivos precisam de justificativa observável; critérios de recência/frequência devem explicitar datas e amostra usadas.
 4. Produzir o JSON de cada lead com todos os campos da seção 15 da política. Guardar fontes e cálculo em registro auxiliar associado ao perfil. O exemplo de clínica é fictício, não deve ser importado. `abordar` deve refletir a decisão real, nunca ser preenchido automaticamente com true.
