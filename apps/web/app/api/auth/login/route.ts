@@ -1,15 +1,28 @@
 import { NextResponse } from "next/server";
 
-const DEMO_EMAIL = process.env.DEMO_EMAIL ?? "demo@innovagro.local";
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "InnovAgro360!";
-const SESSION_TOKEN = process.env.DEMO_SESSION_TOKEN ?? "innovagro-demo-session-v1";
-
 export async function POST(request: Request) {
-  const body = (await request.json()) as { email?: string; password?: string };
-  if (body.email?.toLowerCase() !== DEMO_EMAIL.toLowerCase() || body.password !== DEMO_PASSWORD) {
-    return NextResponse.json({ message: "E-mail ou senha inválidos." }, { status: 401 });
+  if (request.headers.get("origin") !== new URL(request.url).origin) {
+    return NextResponse.json({ message: "Origem inválida." }, { status: 403 });
   }
-  const response = NextResponse.json({ authenticated: true });
-  response.cookies.set("innovagro_session", SESSION_TOKEN, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 28800, path: "/" });
-  return response;
+  const base = process.env.CRM_API_URL?.replace(/\/$/, "");
+  const session = process.env.DEMO_SESSION_TOKEN;
+  if (!base || !session) return NextResponse.json({ message: "Acesso ao servidor ainda não configurado." }, { status: 503 });
+  try {
+    const body = await request.json();
+    if (typeof body.email !== "string" || typeof body.password !== "string") return NextResponse.json({ message: "Informe e-mail e senha." }, { status: 400 });
+    const upstream = await fetch(`${base}/auth/login`, {
+      method: "POST", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15000),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: body.email, password: body.password, organization_slug: process.env.CRM_ORGANIZATION_SLUG ?? "voragon" }),
+    });
+    const data = await upstream.json();
+    if (!upstream.ok || typeof data.access_token !== "string") return NextResponse.json({ message: "Não foi possível entrar. Confira e-mail e senha." }, { status: upstream.status === 401 ? 401 : 502 });
+    const response = NextResponse.json({ authenticated: true }, { headers: { "Cache-Control": "no-store" } });
+    const options = { httpOnly: true, sameSite: "strict" as const, secure: process.env.NODE_ENV === "production", maxAge: 900 };
+    response.cookies.set("innovagro_session", session, { ...options, path: "/" });
+    response.cookies.set("crm_access", data.access_token, { ...options, path: "/api/crm" });
+    return response;
+  } catch {
+    return NextResponse.json({ message: "Servidor indisponível. Tente novamente." }, { status: 502 });
+  }
 }

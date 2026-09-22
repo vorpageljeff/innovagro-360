@@ -1,0 +1,42 @@
+name: voragon-crm
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: ../.env.production
+    volumes: [crm_postgres:/var/lib/postgresql/data]
+    networks: [private]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  api:
+    build: ../apps/api
+    restart: unless-stopped
+    env_file: ../.env.production
+    command: [uvicorn, 'app.main:app', --host, '0.0.0.0', --port, '8000', --workers, '2']
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [private, proxy]
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: proxy
+      traefik.http.routers.voragon-crm.rule: 'Host(`crm-api.2.25.189.129.nip.io`)'
+      traefik.http.routers.voragon-crm.entrypoints: websecure
+      traefik.http.routers.voragon-crm.tls: 'true'
+      traefik.http.routers.voragon-crm.tls.certresolver: letsencrypt
+      traefik.http.routers.voragon-crm.middlewares: crm-limit
+      traefik.http.middlewares.crm-limit.ratelimit.average: '20'
+      traefik.http.middlewares.crm-limit.ratelimit.burst: '40'
+      traefik.http.services.voragon-crm.loadbalancer.server.port: '8000'
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://localhost:8000/health")']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+networks:
+  private: {internal: true}
+  proxy: {external: true}
+volumes:
+  crm_postgres:

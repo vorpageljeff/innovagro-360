@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-const SESSION_TOKEN = process.env.DEMO_SESSION_TOKEN ?? "innovagro-demo-session-v1";
+const SESSION_TOKEN = process.env.DEMO_SESSION_TOKEN;
 export function middleware(request: NextRequest) {
-  if (request.cookies.get("innovagro_session")?.value !== SESSION_TOKEN) {
+  if (!SESSION_TOKEN || request.cookies.get("innovagro_session")?.value !== SESSION_TOKEN) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
