@@ -24,3 +24,7 @@ Código local é área de trabalho. Dados reais do CRM devem persistir no banco 
 - Antes de migração/importação que altere dados existentes, conferir backup externo recuperável. Não executar reset, apagar volumes ou sobrescrever banco para resolver deploy.
 - Se uma etapa falhar, interromper suas dependentes, preservar o estado e informar o bloqueio específico. Continuar trabalhos independentes possíveis.
 - Registrar pendências e resultados; não afirmar que uma automação planejada já está ativa.
+
+## Prospecção comercial
+
+Para pesquisa, qualificação, mensagens ou importação de leads da Voragon, consultar também `docs/AGENTE_PROSPECCAO_VORAGON.md` e `docs/PROSPECCAO_OPERACAO.md`. A política de 22/09/2026 substitui o modelo antigo de primeiro contato. Preservar históricos; não confundir regras documentadas com automação instalada.
