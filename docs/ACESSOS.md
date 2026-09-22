@@ -44,3 +44,9 @@ Jefferson confirmou que se trata da primeira instalação e autorizou criar o ba
 - Backup completo após importação: https://drive.google.com/file/d/1Fb967C4_UYL_rWtqKvHHLvCGn8R7SEyp/view ; restaurado em banco temporário isolado e conferido (10 leads/10 eventos). Banco temporário removido após teste.
 - Backup diário na VPS às 04:30 no fuso do servidor; script `deploy/backup-crm.sh`, saída `/opt/innovagro/backups/crm360/`. Upload externo periódico ainda não automatizado. Não confundir snapshots na mesma VPS com backup externo.
 - O CRM de contatos/histórico persiste no servidor. Os demais módulos de demonstração não foram migrados nesta entrega.
+
+### Produção verificada
+
+Vercel produção Ready: `dpl_BHzAjdy72MkS5KVyUrd3Eqx14P7p`, URL https://innovagro-360.vercel.app/crm. Login real → CRM testado no navegador; dez contatos e seus históricos visíveis, campos de retorno presentes, sem erros JavaScript e sem localStorage do CRM. Layout conferido em desktop e largura de 390px. O usuário verifica as respostas no Instagram e as anota manualmente.
+
+Identificador de login inicial: `jefferson@voragon.vercel.app` (não representa caixa postal criada). Senha inicial aleatória em arquivo privado `~/.config/voragon-crm/ACESSO-CRM.txt`, fora do repositório.
