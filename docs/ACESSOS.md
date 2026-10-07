@@ -99,3 +99,12 @@ Integração preparada e publicada a partir de `3ec96f4`. Backend release `/opt/
 Sem migração ou alteração dos dados existentes. API saudável e Evolution conectado (`open`); `EVOLUTION_BOT_ENABLED=false` e `WHATSAPP_AI_ENABLED=false` confirmados após deploy. Configuração pendente: chave da API, modelo e informações da empresa. Não foram realizadas chamadas reais à OpenAI nem envios de mensagens. Referência e comportamento: `docs/WHATSAPP_IA.md`.
 
 Validação: 50 testes passaram (provedor simulado), build Next.js aprovado, preview autenticado aprovado, navegador em produção verificou autenticação, painel IA pendente, pausa global, conexão, layout de 390px e ausência de erros JavaScript. Primeiro login do CRM durante a promoção falhou transitoriamente; a nova sessão posterior passou. Instruções privadas de configuração estão em `deploy/whatsapp-ai.env.example`; arquivo local privado sem chave preparado em `~/.config/voragon-crm/ai.env`, fora do Git. Uso real e custos dependem da conta do titular; ainda não foi validada geração real.
+
+
+## Lista de leads para WhatsApp — 07/10/2026
+
+Código publicado `499b6ef22b3aa1552d7012b33844c9ef54a3da56`, enviado à branch `feature/crm-evolution-20261007` e confirmado no remoto. Backend release `/opt/innovagro/apps/crm360/releases/499b6ef`, imagem `voragon-crm-api:leads-499b6ef`, CURRENT_RELEASE atualizado. Frontend Vercel `dpl_CbSCYXWK1tUABg19iSmWDCsEwxHt`, promovido após consulta autenticada no deployment protegido. Acessar https://innovagro-360.vercel.app/whatsapp → Leads para contato.
+
+Sem migração ou alteração de leads existentes. Leitura real confirmou 32 leads, 1 com telefone disponível e 31 sem telefone. Configuração privada de exclusões atualizada com o número pessoal solicitado, incluindo a variante brasileira sem nono dígito; cópia privada da configuração anterior preservada no servidor. API saudável, Evolution `open`, bot e IA desabilitados após publicação.
+
+57 testes passaram; build Next.js local e Vercel aprovados; API real verificou disponibilidade, telefones ausentes, filtros, paginação e exclusões. Navegador em produção conferiu autenticação, lista real e filtros; fixtures interceptadas apenas no navegador validaram seleção, bloqueios, link de mensagem individual e formulário de telefone sem modificar o banco. Layout de 390px e ausência de erros JavaScript confirmados. Nenhuma mensagem enviada. Comportamento e limites em `WHATSAPP_LEADS.md`.
