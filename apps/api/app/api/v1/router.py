@@ -9,3 +9,6 @@ api_router.include_router(crm_router)
 
 from app.api.v1.automations import router as automations_router
 api_router.include_router(automations_router)
+
+from app.api.v1.whatsapp_dashboard import router as whatsapp_dashboard_router
+api_router.include_router(whatsapp_dashboard_router)

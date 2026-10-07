@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { AutomationPanel } from "./automation-panel";
 import styles from "./crm.module.css";
 
@@ -91,7 +92,7 @@ export function CrmWorkspace() {
   const visible = leads.filter(l => (priorityFilter === "todos" || l.priority === priorityFilter) && `${l.name} ${l.instagram ?? ""} ${l.phone ?? ""} ${l.city}`.toLowerCase().includes(query.toLowerCase()) && (filter === "todos" || (filter === "hoje" ? l.next_contact_on && l.next_contact_on <= today() && !["sem_interesse", "convertido"].includes(l.status) : l.status === filter))).sort((a, b) => (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2));
   return <div className="content">
     <div className="page-heading"><div><p className="eyebrow">COMERCIAL</p><h1 className="title">Kanban comercial</h1><p className="subtitle">Acompanhe as abordagens, registre respostas e organize o próximo contato.</p></div>
-      <div className={styles.actions}><button className="btn" disabled={!ready || busy} onClick={() => importFile.current?.click()}>Importar relatório</button><button className="btn primary" disabled={!ready || busy} onClick={() => { eventKey.current = crypto.randomUUID(); setCreating(true); }}>Registrar contato</button></div></div>
+      <div className={styles.actions}><Link className="btn" href="/whatsapp">Painel WhatsApp</Link><button className="btn" disabled={!ready || busy} onClick={() => importFile.current?.click()}>Importar relatório</button><button className="btn primary" disabled={!ready || busy} onClick={() => { eventKey.current = crypto.randomUUID(); setCreating(true); }}>Registrar contato</button></div></div>
     <input ref={importFile} type="file" accept="application/json,.json" hidden onChange={e => void importContacts(e.target.files?.[0])} />
     {error && <p role="alert" className={styles.error}>{error} <button className="btn" disabled={busy} onClick={() => void load()}>Recarregar</button></p>}
     {notice && <p role="status" className={styles.notice}>{notice}</p>}

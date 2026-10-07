@@ -36,3 +36,8 @@ Seis templates editáveis: não contatar, atendente, orçamento, serviços, supo
 
 
 Validação da instalação completa: 35 testes, build Next.js e teste de execução em PostgreSQL isolado passaram. Produção `29b3422` / Vercel `dpl_dGLKLc6Hw6k9zJc1ZdXJU8FGbBw6`, com seis fluxos ativos e 31 contatos preservados. QR, simulações, assumir/retomar atendimento e persistência após recarregar conferidos no navegador. Nenhum envio real foi usado como teste. Ainda é necessário escanear o QR em CRM → Automações → Conectar WhatsApp por QR.
+
+
+## Pausa solicitada em 07/10/2026
+
+Após confirmar o WhatsApp conectado, Jefferson solicitou suspender os envios da própria instância. `EVOLUTION_BOT_ENABLED=false` foi gravado na configuração privada persistente, e a API foi recriada e conferida com bot desabilitado. O WhatsApp permanece conectado para receber e registrar mensagens. Os fluxos existentes foram preservados; o bloqueio global impede suas respostas automáticas. Não reativar os envios sem nova instrução explícita do usuário. Novos deployments devem preservar esta configuração.

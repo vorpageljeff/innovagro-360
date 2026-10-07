@@ -76,3 +76,8 @@ Seis fluxos comerciais foram cadastrados ativos, com ordem de execução, menu 1
 Produção verificada no navegador: login, 31 contatos, assumir/retomar atendimento, cinco caminhos no simulador, seis fluxos persistentes após reload, QR e tela de 390px; zero erros JavaScript. `/health` público retornou 200 após o container ficar saudável. Os 404 observados durante substituição da API ocorreram antes da liberação do container pelo proxy; não persistiram. Evolution permanece aguardando vinculação pelo QR. A entrega não comprova envio real, que depende do aparelho vinculado e de uma mensagem recebida.
 
 Backup antes da migração: `crm-20261007T121119Z.dump`, acompanhado do banco e instâncias Evolution; cópias privadas fora da VPS. Restauração e migração desse backup foram usadas no teste PostgreSQL descrito acima. Backup final da configuração também gerado e copiado para fora da VPS. Permanecem pendentes cópias externas automáticas, em vez da cópia manual realizada nesta sessão.
+
+
+### Respostas automáticas pausadas por Jefferson — 07/10/2026
+
+Evolution confirmou conexão `open` com a conta indicada pelo usuário. Em seguida, a pedido explícito de Jefferson, a configuração persistente da API foi alterada para `EVOLUTION_BOT_ENABLED=false`; API recriada e flag conferida. Manter essa pausa nos próximos deployments. A conexão e os fluxos foram preservados. Não reativar envios sem nova instrução do usuário.
