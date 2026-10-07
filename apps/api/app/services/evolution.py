@@ -1,4 +1,6 @@
 from urllib.parse import quote
+import unicodedata
+import re
 import httpx
 from fastapi import HTTPException
 from app.core.config import settings
@@ -33,6 +35,8 @@ def incoming_message(payload):
     if not isinstance(key, dict) or key.get('fromMe') is not False:
         return None
     jid = key.get('remoteJid', '')
+    if isinstance(jid, str) and jid.endswith('@lid'):
+        jid = key.get('remoteJidAlt', '')
     if not isinstance(jid, str) or not jid.endswith('@s.whatsapp.net'):
         return None
     phone = jid.split('@')[0]
@@ -49,6 +53,27 @@ def incoming_message(payload):
     return phone, message_id, text[:10000]
 
 
+def normalize_text(text):
+    return ''.join(c for c in unicodedata.normalize('NFKD', text.casefold()) if not unicodedata.combining(c)).strip()
+
+
 def matching_rule(rules, text):
-    # First matching rule wins, in creation order.
-    return next((rule for rule in rules if rule.enabled and rule.contains.casefold() in text.casefold()), None)
+    normalized = normalize_text(text)
+    # Explicit execution order; stable creation order breaks ties.
+    ordered = sorted(rules, key=lambda rule: getattr(rule, 'position', 100))
+    for rule in ordered:
+        if not rule.enabled:
+            continue
+        terms = [normalize_text(term) for term in rule.contains.split('|') if term.strip()]
+        if not terms or any(normalized == term if term.isdigit() else re.search(r'(?<!\w)' + re.escape(term) + r'(?!\w)', normalized) is not None for term in terms):
+            return rule
+    return None
+
+
+def rule_plan(rule):
+    if rule is None:
+        return {'matched': False}
+    status = rule.status or 'respondeu'
+    return {'matched': True, 'name': rule.name, 'priority': rule.priority,
+            'status': status, 'handoff': getattr(rule, 'handoff', False),
+            'reply': rule.reply if status not in ('sem_interesse', 'convertido') else ''}

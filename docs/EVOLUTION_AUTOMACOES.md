@@ -2,7 +2,7 @@
 
 O CRM inclui Kanban com prioridades baixa, média, alta e urgente, telefone WhatsApp por contato e fluxos persistidos na API. Nenhum dado depende de localStorage. O editor inicial é sequencial: mensagem recebida → condição de texto → alteração de prioridade/situação → resposta opcional. Não é um editor completo de grafos, não executa código arbitrário e não inclui IA, áudio, agendamento ou integrações HTTP genéricas.
 
-Cada fluxo começa pausado. A primeira regra ativa que corresponder ao texto, por ordem de criação, é executada. Vincule um telefone com país e DDD a um contato existente. Números desconhecidos são registrados como não associados; não criam automaticamente leads com perfis Instagram inventados. Grupos, mensagens do próprio bot e identificadores LID ainda não resolvidos são ignorados. Contatos convertidos e sem interesse não recebem respostas automáticas. Mensagens e respostas confirmadas aparecem no histórico do contato; a consulta retorna as 100 mais recentes.
+Fluxos criados manualmente começam pausados. Os seis fluxos iniciais de atendimento comercial são configurados ativos na instalação completa. A primeira regra ativa que corresponder ao texto, por ordem de execução e, em caso de empate, por criação, é executada. Números novos recebidos por webhook criam contatos com telefone e nome informado pelo WhatsApp; Instagram fica vazio. O índice único por organização/telefone evita duplicatas. Contatos antigos continuam podendo receber vínculo de telefone manual. Grupos, mensagens do próprio bot e identificadores LID sem alternativa explícita de telefone são ignorados. Contatos convertidos e sem interesse não recebem respostas automáticas. Mensagens e respostas confirmadas aparecem no histórico do contato; a consulta retorna as 100 mais recentes.
 
 ## Configuração no servidor
 
@@ -26,3 +26,10 @@ Backup anterior à migração: `crm-20261007T115746Z.dump`, checksum SHA-256 `34
 ## Resultado publicado
 
 API/interface `5a03d43`, deploy Vercel `dpl_GURJjmDDawjeA3BYJ4yqHcxubksy` promovido. Migração validada também em uma restauração temporária do banco real, preservando 31 leads e 31 atividades; aplicada em produção. Instância Evolution criada, webhook confirmado, QR exibido no navegador. Login, consultas e escrita autenticada de prioridade verificados em produção, com releitura após recarregar. Fluxo inicial de orçamento salvo pausado para revisão do usuário. Nenhum envio real foi realizado. O usuário deve conectar o WhatsApp e revisar/ativar o fluxo para concluir a validação de mensagens.
+
+
+## Instalação completa do atendimento
+
+Schema `20261007_0004`: Instagram opcional para contatos originados no WhatsApp, pausa do bot por contato, ordem de execução e encaminhamento humano por fluxo. Atendente, orçamento e suporte encaminham para humano e pausam futuras respostas do bot; é possível retomar no contato. A mensagem do encaminhamento ainda é enviada uma única vez. Pedido de não contatar marca sem interesse e não responde.
+
+Seis templates editáveis: não contatar, atendente, orçamento, serviços, suporte e boas-vindas/menu. O menu usa 1 para orçamento, 2 para serviços e 3 para atendente. Condições aceitam alternativas separadas por `|`, desconsideram acentos/maiúsculas e respeitam limites de palavra; opções numéricas exigem igualdade. A simulação na tela usa as regras ativas e mostra resposta e ações sem gravar contatos nem enviar mensagens. O bot não é baseado em IA; trabalha com os fluxos de atendimento configurados.

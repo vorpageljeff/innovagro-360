@@ -7,8 +7,8 @@ from app.api.dependencies import Auth, DB
 from app.api.v1.crm import get_lead
 from app.core.config import settings
 from app.models.crm import Lead, AutomationRule, AutomationReceipt
-from app.schemas.crm import RuleInput, RuleOutput, ReceiptOutput
-from app.services.evolution import configured, evolution_request, incoming_message, matching_rule
+from app.schemas.crm import RuleInput, RuleOutput, ReceiptOutput, SimulationInput
+from app.services.evolution import configured, evolution_request, incoming_message, matching_rule, rule_plan
 
 router = APIRouter(prefix='/crm', tags=['Automações'])
 
@@ -37,7 +37,7 @@ async def connect(auth: Auth):
 @router.get('/automations', response_model=list[RuleOutput])
 async def list_rules(db: DB, auth: Auth):
     return (await db.execute(select(AutomationRule).where(AutomationRule.organization_id == auth.organization_id)
-                            .order_by(AutomationRule.created_at, AutomationRule.id))).scalars().all()
+                            .order_by(AutomationRule.position, AutomationRule.created_at, AutomationRule.id))).scalars().all()
 
 
 @router.post('/automations', response_model=RuleOutput)
@@ -47,6 +47,13 @@ async def create_rule(data: RuleInput, db: DB, auth: Auth):
     await db.commit()
     await db.refresh(rule)
     return rule
+
+
+@router.post('/automations/simulate')
+async def simulate(data: SimulationInput, db: DB, auth: Auth):
+    rules = (await db.execute(select(AutomationRule).where(AutomationRule.organization_id == auth.organization_id)
+        .order_by(AutomationRule.position, AutomationRule.created_at, AutomationRule.id))).scalars().all()
+    return rule_plan(matching_rule(rules, data.text))
 
 
 @router.post('/automations/{rule_id}', response_model=RuleOutput)
@@ -90,6 +97,15 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
     org = UUID(settings.evolution_organization_id)
     lead = (await db.execute(select(Lead).where(Lead.organization_id == org, Lead.phone == phone)
                             .with_for_update())).scalar_one_or_none()
+    if lead is None:
+        data = payload.get('data', {})
+        name = data.get('pushName') if isinstance(data, dict) else None
+        name = name.strip()[:160] if isinstance(name, str) and name.strip() else 'Contato WhatsApp'
+        await db.execute(insert(Lead).values(id=uuid4(), organization_id=org, name=name,
+            instagram=None, city='', phone=phone, priority='media', status='respondeu', bot_paused=False)
+            .on_conflict_do_nothing(index_elements=['organization_id', 'phone']))
+        lead = (await db.execute(select(Lead).where(Lead.organization_id == org, Lead.phone == phone)
+            .with_for_update())).scalar_one()
     receipt_id = uuid4()
     inserted = (await db.execute(insert(AutomationReceipt).values(id=receipt_id, organization_id=org,
         message_id=message_id, lead_id=lead.id if lead else None, incoming=text, reply='', state='received')
@@ -97,12 +113,12 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
     if inserted is None:
         return {'state': 'duplicate'}
     receipt = (await db.execute(select(AutomationReceipt).where(AutomationReceipt.id == receipt_id))).scalar_one()
-    if lead is None or lead.status in ('sem_interesse', 'convertido') or not settings.evolution_bot_enabled:
+    if lead is None or lead.status in ('sem_interesse', 'convertido') or lead.bot_paused or not settings.evolution_bot_enabled:
         receipt.state = 'unmatched' if lead is None else 'paused'
         await db.commit()
         return {'state': receipt.state}
     rules = (await db.execute(select(AutomationRule).where(AutomationRule.organization_id == org,
-        AutomationRule.enabled.is_(True)).order_by(AutomationRule.created_at, AutomationRule.id))).scalars().all()
+        AutomationRule.enabled.is_(True)).order_by(AutomationRule.position, AutomationRule.created_at, AutomationRule.id))).scalars().all()
     rule = matching_rule(rules, text)
     if rule is None:
         receipt.state = 'no_rule'
@@ -112,13 +128,15 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
         lead.priority = rule.priority
     lead.status = rule.status or 'respondeu'
     lead.next_contact_on = None
-    receipt.reply = rule.reply
-    receipt.state = 'sending' if rule.reply and lead.status not in ('sem_interesse', 'convertido') else 'completed'
+    lead.bot_paused = rule.handoff
+    plan = rule_plan(rule)
+    receipt.reply = plan['reply']
+    receipt.state = 'sending' if receipt.reply else 'completed'
     # Persist BEFORE external send. Duplicate delivery must never send twice.
     await db.commit()
     if receipt.state == 'sending':
         try:
-            await evolution_request('POST', 'message/sendText', {'number': phone, 'text': rule.reply})
+            await evolution_request('POST', 'message/sendText', {'number': phone, 'text': receipt.reply})
             receipt.state = 'sent'
         except HTTPException:
             receipt.state = 'uncertain'

@@ -62,9 +62,9 @@ def test_webhook_deduplication_and_terminal_contacts(monkeypatch, duplicate, ter
     monkeypatch.setattr(module.settings, 'evolution_organization_id', str(org))
     monkeypatch.setattr(module.settings, 'evolution_webhook_secret', 'secret')
     monkeypatch.setattr(module.settings, 'evolution_bot_enabled', True)
-    lead = SimpleNamespace(id=lead_id, status='sem_interesse' if terminal else 'aguardando', priority='media', next_contact_on=None)
+    lead = SimpleNamespace(id=lead_id, status='sem_interesse' if terminal else 'aguardando', priority='media', next_contact_on=None, bot_paused=False)
     receipt = SimpleNamespace(state='received', reply='')
-    rule = SimpleNamespace(enabled=True, contains='orçamento', reply='Olá!', priority='alta', status=None)
+    rule = SimpleNamespace(enabled=True, contains='orçamento', reply='Olá!', priority='alta', status=None, name='Orçamento', handoff=False)
     sends = []
     class DB:
         calls = 0
@@ -95,3 +95,40 @@ def test_webhook_deduplication_and_terminal_contacts(monkeypatch, duplicate, ter
     result = asyncio.run(module.webhook(Request(), db, 'secret'))
     assert result['state'] == expected
     assert len(sends) == (1 if expected == 'sent' else 0)
+
+
+def test_normalized_synonyms_and_exact_menu_option():
+    rule = SimpleNamespace(enabled=True, contains='orçamento|preço|1', position=10)
+    fallback = SimpleNamespace(enabled=True, contains='', position=100)
+    assert matching_rule([fallback, rule], 'ORCAMENTO') is rule
+    assert matching_rule([fallback, rule], '1') is rule
+    assert matching_rule([fallback, rule], '123') is fallback
+
+
+def test_lid_with_explicit_phone_alternative():
+    assert incoming_message(payload(remoteJid='123@lid', remoteJidAlt='5511999999999@s.whatsapp.net'))[0] == '5511999999999'
+
+
+def test_terminal_transition_does_not_claim_a_reply():
+    from app.services.evolution import rule_plan
+    rule = SimpleNamespace(name='Encerrar', priority='baixa', status='sem_interesse', reply='Não enviar', handoff=False)
+    assert rule_plan(rule)['reply'] == ''
+
+
+def test_complete_commercial_paths():
+    from app.services.bot_templates import commercial_templates
+    from app.services.evolution import rule_plan
+    rules = [SimpleNamespace(**data) for data in commercial_templates()]
+    cases = [('Oi', 'Boas-vindas e menu', False), ('1', 'Orçamento — atendimento inicial', True),
+             ('2', 'Conhecer serviços', False), ('3', 'Falar com atendente', True),
+             ('Estou com um problema', 'Suporte e dúvidas', True), ('não quero', 'Não contatar', True)]
+    for text, name, handoff in cases:
+        plan = rule_plan(matching_rule(rules, text))
+        assert plan['name'] == name and plan['handoff'] == handoff
+    assert rule_plan(matching_rule(rules, 'nao quero'))['reply'] == ''
+
+
+def test_stop_keyword_does_not_match_preparar():
+    from app.services.bot_templates import commercial_templates
+    rules = [SimpleNamespace(**data) for data in commercial_templates()]
+    assert matching_rule(rules, 'Quero preparar um site').name == 'Conhecer serviços'

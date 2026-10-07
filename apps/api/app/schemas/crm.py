@@ -66,11 +66,12 @@ class LeadOutput(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
     name: str
-    instagram: str
+    instagram: str | None
     city: str
     status: str
     priority: Priority
     phone: str | None
+    bot_paused: bool
     last_contact_on: date | None
     next_contact_on: date | None
 
@@ -84,6 +85,7 @@ class LeadUpdate(BaseModel):
     priority: Priority | None = None
     status: Status | None = None
     phone: str | None = None
+    bot_paused: bool | None = None
 
     @field_validator('phone')
     @classmethod
@@ -100,6 +102,8 @@ class RuleInput(BaseModel):
     model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
     name: str = Field(min_length=1, max_length=120)
     enabled: bool = False
+    position: int = Field(default=100, ge=0, le=10000)
+    handoff: bool = False
     contains: str = Field(default='', max_length=200)
     reply: str = Field(default='', max_length=4000)
     priority: Priority | None = None
@@ -118,3 +122,8 @@ class ReceiptOutput(BaseModel):
     reply: str
     state: str
     created_at: datetime
+
+
+class SimulationInput(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    text: str = Field(min_length=1, max_length=10000)

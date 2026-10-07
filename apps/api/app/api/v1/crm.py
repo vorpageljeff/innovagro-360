@@ -76,7 +76,7 @@ async def record_activity(lead_id: UUID, data: ActivityInput, db: DB, auth: Auth
 async def update_lead(lead_id: UUID, data: LeadUpdate, db: DB, auth: Auth):
     lead = await get_lead(db, auth, lead_id)
     changes = data.model_dump(exclude_unset=True)
-    for key in ('priority', 'status'):
+    for key in ('priority', 'status', 'bot_paused'):
         if key in changes and changes[key] is None:
             raise HTTPException(422, 'Prioridade e situação não podem ser vazias.')
     if changes.get('phone'):
