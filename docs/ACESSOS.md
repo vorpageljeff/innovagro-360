@@ -50,3 +50,16 @@ Jefferson confirmou que se trata da primeira instalação e autorizou criar o ba
 Vercel produção Ready: `dpl_BHzAjdy72MkS5KVyUrd3Eqx14P7p`, URL https://innovagro-360.vercel.app/crm. Login real → CRM testado no navegador; dez contatos e seus históricos visíveis, campos de retorno presentes, sem erros JavaScript e sem localStorage do CRM. Layout conferido em desktop e largura de 390px. O usuário verifica as respostas no Instagram e as anota manualmente.
 
 Identificador de login inicial: `jefferson@voragon.vercel.app` (não representa caixa postal criada). Senha inicial aleatória em arquivo privado `~/.config/voragon-crm/ACESSO-CRM.txt`, fora do repositório.
+
+
+## Evolution, Kanban e fluxos — 07/10/2026
+
+Código da API/interface: `5a03d438672ba27603a18c59973c0d9c5ba8ccf9`, enviado à branch `feature/crm-evolution-20261007`. Produção Vercel `dpl_GURJjmDDawjeA3BYJ4yqHcxubksy`, promovida para o endereço principal. A cópia limpa usada na publicação excluiu alterações locais de outras tarefas.
+
+Backend em `/opt/innovagro/apps/crm360/releases/5a03d43`, imagem `voragon-crm-api:evolution-5a03d43`; `CURRENT_RELEASE` aponta essa versão. O diretório raiz histórico não foi sobrescrito. Usar os compose da release, incluindo `deploy/compose.evolution.yml` e o override privado `deploy/runtime-image.yml`, nas próximas operações. Schema `20261007_0003`, 31 contatos e 31 atividades preservados. API e bancos saudáveis.
+
+Evolution v2.3.7 instalado no mesmo projeto Docker, rede privada da integração sem novas portas públicas. Instância `crm360`, organização `voragon`, webhook interno configurado e autenticado. Chaves em `.env.production` e `.env.evolution`, fora do Git; configuração anterior preservada para recuperação. A integração ainda aguarda o usuário escanear o QR pelo painel Automações. Um fluxo “Orçamento — atendimento inicial” foi salvo pausado; nenhuma mensagem comercial foi enviada.
+
+Verificação em navegador na produção: login, 31 contatos, gravação da prioridade existente e persistência após reload, cadastro/leitura do fluxo pausado, QR renderizado, telas desktop e 390px; zero erros JavaScript. Envio/recebimento reais ainda dependem da vinculação do WhatsApp. A rota pública `/health` retornou 404 no proxy nesta conferência; o health interno Docker está saudável, e as rotas públicas autenticadas responderam 200 após login.
+
+Backup recuperável anterior à migração e limites estão em `EVOLUTION_AUTOMACOES.md`. O script diário foi estendido para incluir banco e instâncias do Evolution. Cópias externas automáticas continuam pendentes.

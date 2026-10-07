@@ -21,3 +21,8 @@ Fontes oficiais verificadas: [rotas de instância](https://github.com/evolution-
 30 testes da API passaram, incluindo normalização do telefone, prioridade inválida, autenticação, regras pausadas, condição sem distinção de maiúsculas, isolamento do webhook, eventos duplicados e bloqueio de contatos sem interesse. TypeScript e build Next.js passaram. Falta validação de mensagens reais após vinculação do telefone pelo usuário.
 
 Backup anterior à migração: `crm-20261007T115746Z.dump`, checksum SHA-256 `343d0864e320537e52fb7e2a52781e54abe34e845b33c8056480eef2db93a6cb`. Cópia fora da VPS em diretório privado local; restauração testada em banco temporário, com schema `20260921_0002`, 31 leads e 31 atividades. Banco de teste removido após a conferência. Upload externo periódico permanece pendente.
+
+
+## Resultado publicado
+
+API/interface `5a03d43`, deploy Vercel `dpl_GURJjmDDawjeA3BYJ4yqHcxubksy` promovido. Migração validada também em uma restauração temporária do banco real, preservando 31 leads e 31 atividades; aplicada em produção. Instância Evolution criada, webhook confirmado, QR exibido no navegador. Login, consultas e escrita autenticada de prioridade verificados em produção, com releitura após recarregar. Fluxo inicial de orçamento salvo pausado para revisão do usuário. Nenhum envio real foi realizado. O usuário deve conectar o WhatsApp e revisar/ativar o fluxo para concluir a validação de mensagens.
