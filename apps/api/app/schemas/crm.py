@@ -6,6 +6,8 @@ from uuid import UUID
 from urllib.parse import urlsplit
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+Priority = Literal['baixa', 'media', 'alta', 'urgente']
+
 Status = Literal['aguardando', 'respondeu', 'sem_interesse', 'convertido']
 
 class LeadInput(BaseModel):
@@ -67,9 +69,52 @@ class LeadOutput(BaseModel):
     instagram: str
     city: str
     status: str
+    priority: Priority
+    phone: str | None
     last_contact_on: date | None
     next_contact_on: date | None
 
 class ImportInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
     leads: list[LeadInput] = Field(min_length=1, max_length=100)
+
+
+class LeadUpdate(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    priority: Priority | None = None
+    status: Status | None = None
+    phone: str | None = None
+
+    @field_validator('phone')
+    @classmethod
+    def valid_phone(cls, value):
+        if value is None or value == '':
+            return None
+        value = re.sub(r'[+ ()-]', '', value)
+        if not re.fullmatch(r'[1-9][0-9]{9,14}', value):
+            raise ValueError('Informe telefone com código do país e DDD.')
+        return value
+
+
+class RuleInput(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    name: str = Field(min_length=1, max_length=120)
+    enabled: bool = False
+    contains: str = Field(default='', max_length=200)
+    reply: str = Field(default='', max_length=4000)
+    priority: Priority | None = None
+    status: Status | None = None
+
+
+class RuleOutput(RuleInput):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+
+
+class ReceiptOutput(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    incoming: str
+    reply: str
+    state: str
+    created_at: datetime

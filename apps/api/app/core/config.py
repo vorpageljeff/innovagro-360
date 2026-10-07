@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://innovagro:innovagro@localhost:5432/innovagro"
     redis_url: str = "redis://localhost:6379/0"
     cors_origins: list[str] = ["http://localhost:3000"]
+    evolution_api_url: str = ''
+    evolution_api_key: str = ''
+    evolution_instance: str = ''
+    evolution_organization_id: str = ''
+    evolution_webhook_secret: str = ''
+    evolution_bot_enabled: bool = False
     access_token_minutes: int = 15
     refresh_token_days: int = 30
 

@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from app.api.dependencies import Auth, DB
 from app.models.crm import Lead, LeadActivity
-from app.schemas.crm import ActivityInput, ActivityOutput, ImportInput, LeadInput, LeadOutput
+from app.schemas.crm import ActivityInput, ActivityOutput, ImportInput, LeadInput, LeadOutput, LeadUpdate
 from app.services.crm import apply_activity
 
 router = APIRouter(prefix='/crm', tags=['CRM'])
@@ -67,6 +67,28 @@ async def record_activity(lead_id: UUID, data: ActivityInput, db: DB, auth: Auth
         return lead
     db.add(LeadActivity(organization_id=auth.organization_id, lead_id=lead.id, event_key=data.event_key, kind=data.kind, occurred_on=data.occurred_on, note=data.note, requested_status=data.status, requested_next_contact_on=data.next_contact_on))
     apply_activity(lead, data)
+    await db.commit()
+    await db.refresh(lead)
+    return lead
+
+
+@router.post('/leads/{lead_id}/settings', response_model=LeadOutput)
+async def update_lead(lead_id: UUID, data: LeadUpdate, db: DB, auth: Auth):
+    lead = await get_lead(db, auth, lead_id)
+    changes = data.model_dump(exclude_unset=True)
+    for key in ('priority', 'status'):
+        if key in changes and changes[key] is None:
+            raise HTTPException(422, 'Prioridade e situação não podem ser vazias.')
+    if changes.get('phone'):
+        duplicate = (await db.execute(select(Lead.id).where(
+            Lead.organization_id == auth.organization_id, Lead.phone == changes['phone'],
+            Lead.id != lead_id))).scalar_one_or_none()
+        if duplicate:
+            raise HTTPException(409, 'Telefone já vinculado a outro contato.')
+    for key, value in changes.items():
+        setattr(lead, key, value)
+    if lead.status in ('sem_interesse', 'convertido'):
+        lead.next_contact_on = None
     await db.commit()
     await db.refresh(lead)
     return lead

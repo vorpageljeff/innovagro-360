@@ -6,3 +6,6 @@ api_router.include_router(auth_router)
 
 from app.api.v1.crm import router as crm_router
 api_router.include_router(crm_router)
+
+from app.api.v1.automations import router as automations_router
+api_router.include_router(automations_router)
