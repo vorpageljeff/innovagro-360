@@ -23,8 +23,17 @@ class Settings(BaseSettings):
     whatsapp_ai_model: str = ''
     whatsapp_ai_knowledge: str = Field(default='', max_length=8000)
     whatsapp_ai_daily_limit: int = Field(default=100, ge=1, le=1000)
+    whatsapp_ai_required_fields: str = 'name,service,need'
     access_token_minutes: int = 15
     refresh_token_days: int = 30
+
+    @field_validator('whatsapp_ai_required_fields')
+    @classmethod
+    def qualification_fields(cls, value):
+        fields = [field.strip() for field in value.split(',')]
+        if not fields or any(field not in ('name', 'company', 'service', 'need') for field in fields):
+            raise ValueError('Campos de qualificação inválidos.')
+        return ','.join(dict.fromkeys(fields))
 
     @field_validator("cors_origins", mode="before")
     @classmethod

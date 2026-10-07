@@ -7,10 +7,10 @@ from sqlalchemy.dialects.postgresql import insert
 from app.api.dependencies import Auth, DB
 from app.api.v1.crm import get_lead
 from app.core.config import settings
-from app.models.crm import Lead, AutomationRule, AutomationReceipt
+from app.models.crm import Lead, LeadActivity, AutomationRule, AutomationReceipt
 from app.schemas.crm import RuleInput, RuleOutput, ReceiptOutput, SimulationInput
 from app.services.evolution import configured, evolution_request, incoming_message, matching_rule, rule_plan
-from app.services.whatsapp_ai import AIUnavailable, answer as ai_answer, readiness
+from app.services.whatsapp_ai import AIUnavailable, answer as ai_answer, readiness, qualification_complete, qualification_note, site_intake
 from app.services.whatsapp_leads import excluded_phones
 
 router = APIRouter(prefix='/crm', tags=['Automações'])
@@ -22,7 +22,8 @@ async def ai_status(auth: Auth):
     missing = readiness()
     return {'configured': not missing, 'enabled': settings.whatsapp_ai_enabled,
             'bot_enabled': settings.evolution_bot_enabled, 'missing': missing,
-            'model': settings.whatsapp_ai_model, 'daily_limit': settings.whatsapp_ai_daily_limit}
+            'model': settings.whatsapp_ai_model, 'daily_limit': settings.whatsapp_ai_daily_limit,
+            'qualification_fields': settings.whatsapp_ai_required_fields.split(',')}
 
 
 def owns_integration(auth):
@@ -125,6 +126,20 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
     if inserted is None:
         return {'state': 'duplicate'}
     receipt = (await db.execute(select(AutomationReceipt).where(AutomationReceipt.id == receipt_id))).scalar_one()
+    intake = site_intake(text)
+    if intake and qualification_complete(intake) and lead.status not in ('sem_interesse', 'convertido') and phone not in excluded_phones():
+        from zoneinfo import ZoneInfo
+        db.add(LeadActivity(organization_id=org, lead_id=lead.id,
+            event_key=f'whatsapp-qualification:{receipt_id}', kind='nota',
+            occurred_on=datetime.now(ZoneInfo('America/Sao_Paulo')).date(), note=qualification_note(intake)))
+        lead.status = 'respondeu'
+        lead.priority = 'alta'
+        lead.bot_paused = True
+        lead.next_contact_on = None
+        receipt.state = 'completed'
+        await db.commit()
+        # Incoming qualification can enter the human queue without re-enabling any outbound bot.
+        return {'state': receipt.state}
     if lead is None or lead.status in ('sem_interesse', 'convertido') or lead.bot_paused or phone in excluded_phones() or not settings.evolution_bot_enabled:
         receipt.state = 'unmatched' if lead is None else 'paused'
         await db.commit()
@@ -156,7 +171,22 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
         try:
             if used > settings.whatsapp_ai_daily_limit:
                 raise AIUnavailable()
-            generated = await ai_answer(list(reversed(history)), text)
+            previous = (await db.execute(select(LeadActivity).where(
+                LeadActivity.organization_id == org, LeadActivity.lead_id == lead.id,
+                LeadActivity.event_key.startswith('whatsapp-qualification:', autoescape=True))
+                .order_by(LeadActivity.created_at.desc(), LeadActivity.id.desc()).limit(1))).scalar_one_or_none()
+            generated = await ai_answer(list(reversed(history)), text, previous.note if previous else '')
+            if qualification_complete(generated):
+                generated.handoff = True
+                generated.reply = 'Obrigado pelas informações! Vou encaminhar sua necessidade para nossa equipe continuar o atendimento.'
+                if generated.priority == 'baixa' or generated.priority == 'media':
+                    generated.priority = 'alta'
+            if any((generated.name, generated.company, generated.service, generated.need, generated.summary)):
+                from zoneinfo import ZoneInfo
+                db.add(LeadActivity(organization_id=org, lead_id=lead.id,
+                    event_key=f'whatsapp-qualification:{receipt_id}', kind='nota',
+                    occurred_on=datetime.now(ZoneInfo('America/Sao_Paulo')).date(),
+                    note=qualification_note(generated)))
             receipt.reply = generated.reply
             lead.priority = generated.priority
             lead.status = 'respondeu'

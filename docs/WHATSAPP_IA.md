@@ -16,10 +16,19 @@ Referência sem segredos: `deploy/whatsapp-ai.env.example`. Adicionar os campos 
 - Geração retorna resposta, prioridade e encaminhamento validados. Sem ferramentas para pagamentos, agenda ou operações externas.
 - O recibo é persistido antes de gerar; webhooks repetidos não geram nem enviam novamente. Timeout/API indisponível/saída inválida/limite encaminham o contato à fila humana sem mensagem automática de erro. Não há retry automático de cobrança ou envio.
 - Limite conservador em janela móvel de 24h, até 100 mensagens por padrão, também contando fluxos fixos e geração em andamento. Não é limite monetário: custos dependem do modelo/token; definir também controles de consumo na conta provedora. Gerações abandonadas aparecem como atenção após dois minutos, para revisão humana.
-- `store=false` no provedor; histórico do atendimento permanece no banco do CRM. Limite por resposta: 1.024 tokens de saída; entrada atual até 2.000 caracteres. A IA não substitui os fatos comerciais da empresa.
+- `store=false` no provedor; histórico do atendimento permanece no banco do CRM. Limite por resposta: 2.048 tokens de saída; entrada atual até 2.000 caracteres. A IA não substitui os fatos comerciais da empresa.
 
 ## Verificação
 
 Testes de contrato HTTP usam provedor simulado; não fazem chamadas pagas. Verificam geração estruturada, falha/refusal/saída incompleta, histórico limitado, isolamento de organização, deduplicação, limite, pausa global e precedência do atendimento humano. Ainda é necessário configurar a conta e validar respostas reais antes de habilitar envios. A ausência de chave/contexto é exibida como configuração pendente.
 
 Fontes oficiais: https://developers.openai.com/api/docs/guides/conversation-state e https://developers.openai.com/api/docs/guides/structured-outputs.
+
+
+## Qualificação e origem no site
+
+Campos essenciais configurados em `WHATSAPP_AI_REQUIRED_FIELDS=name,service,need`; empresa opcional. Aceita somente name/company/service/need. A IA retorna os campos coletados e o resumo em saída estruturada. O backend verifica a completude, encaminha com prioridade alta e pausa o bot. Cada snapshot de qualificação é uma nota imutável no histórico existente, com chave por recibo; não há migração. A nota mais recente fornece continuidade à IA além das seis mensagens de contexto. A conversa no painel mostra o último resumo para a equipe.
+
+Mensagens preparadas no formulário do site têm um cabeçalho e campos explícitos. Quando recebidas pelo webhook autenticado, e com os dados essenciais completos, entram na fila humana com nota de qualificação mesmo com IA/bot desabilitados, sem qualquer resposta automática. Campos são declarados pelo cliente, não dados verificados por uma fonte externa. Contatos encerrados e números excluídos não são reabertos. Recebimento repetido não duplica o histórico. O formulário sozinho não salva um lead; depende do cliente confirmar o envio no WhatsApp e do evento chegar ao Evolution.
+
+Dados comerciais podem ser preparados a partir do conteúdo aprovado do site. Ainda faltam chave e modelo para a geração real; publicação do formulário e do encaminhamento não remove a pausa global.

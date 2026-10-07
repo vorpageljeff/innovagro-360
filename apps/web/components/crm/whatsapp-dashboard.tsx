@@ -41,6 +41,7 @@ export function WhatsAppDashboard() {
   const [busyId, setBusyId] = useState("");
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [qualification, setQualification] = useState("");
   const [messageError, setMessageError] = useState("");
   const [messageLoading, setMessageLoading] = useState(false);
   const controller = useRef<AbortController | null>(null);
@@ -70,10 +71,10 @@ export function WhatsAppDashboard() {
   useEffect(() => {
     if (!selected?.lead_id) return;
     const abort = new AbortController();
-    setMessages([]); setMessageError(""); setMessageLoading(true);
+    setMessages([]); setQualification(""); setMessageError(""); setMessageLoading(true);
     if (dialog.current && !dialog.current.open) dialog.current.showModal();
-    void api(`leads/${selected.lead_id}/messages`, abort.signal).then(rows => {
-      if (!abort.signal.aborted) setMessages(rows);
+    void Promise.all([api(`leads/${selected.lead_id}/messages`, abort.signal), api(`leads/${selected.lead_id}/activities`, abort.signal)]).then(([rows, activities]) => {
+      if (!abort.signal.aborted) { setMessages(rows); setQualification(activities.find((item: { note: string }) => item.note.startsWith("Qualificação do WhatsApp\n"))?.note ?? ""); }
     }).catch(e => { if (!abort.signal.aborted) setMessageError(e.message); }).finally(() => { if (!abort.signal.aborted) setMessageLoading(false); });
     return () => abort.abort();
   }, [selected?.lead_id]);
@@ -111,6 +112,6 @@ export function WhatsAppDashboard() {
       <section className={`panel ${styles.recent}`}><div className={styles.sectionHeading}><div><h2>Mensagens recentes</h2><p>As 20 mais recentes no período selecionado</p></div><MessageCircle size={20} /></div>{!data ? <p className={styles.empty}>Carregando mensagens…</p> : !data.recent.length ? <p className={styles.empty}>As conversas aparecerão aqui quando chegarem pelo WhatsApp.</p> : <div className={styles.tableWrap}><table><thead><tr><th>Contato</th><th>Mensagem</th><th>Processamento</th><th>Recebida em</th><th aria-label="Ações" /></tr></thead><tbody>{data.recent.map(item => <tr key={item.id}><td><strong>{item.name}</strong><small>{item.phone ?? "—"}</small></td><td><span className={styles.preview}>{item.incoming}</span></td><td><span className={`${styles.state} ${["uncertain", "sending"].includes(item.state) ? styles.warning : ""}`}>{states[item.state] ?? item.state}</span></td><td>{timestamp(item.created_at)}</td><td><button className="btn" disabled={!item.lead_id} onClick={() => setSelected(item)}>Ver conversa</button></td></tr>)}</tbody></table></div>}</section>
     </>}
     <p className={styles.updated}>{data ? `Atualizado em ${timestamp(data.updated_at)} · horário de Brasília` : "Aguardando dados do servidor"} · atualização automática a cada 30 segundos</p>
-    {selected && <dialog ref={dialog} aria-labelledby="conversation-title" className={styles.dialog} onCancel={() => setSelected(null)} onClose={() => setSelected(null)}><div className={styles.sectionHeading}><div><h2 id="conversation-title">{selected.name}</h2><p>{selected.phone}</p></div><button className="btn" onClick={() => setSelected(null)}>Fechar</button></div>{messageError && <p role="alert" className={styles.error}>{messageError}</p>}{messageLoading ? <p>Carregando conversa…</p> : messages.slice().reverse().map(message => <article className={styles.message} key={message.id}><small>{timestamp(message.created_at)}</small><p><strong>Contato</strong><br />{message.incoming}</p>{message.reply && <p className={styles.reply}><strong>Bot</strong><br />{message.reply}</p>}<small>{states[message.state] ?? message.state}</small></article>)}{selected.lead_id && !["sem_interesse", "convertido"].includes(selected.status ?? "") && <button className="btn primary" disabled={!!busyId} onClick={() => void setHuman(selected.lead_id!, !selected.bot_paused)}>{selected.bot_paused ? "Retomar bot" : "Assumir atendimento"}</button>}</dialog>}
+    {selected && <dialog ref={dialog} aria-labelledby="conversation-title" className={styles.dialog} onCancel={() => setSelected(null)} onClose={() => setSelected(null)}><div className={styles.sectionHeading}><div><h2 id="conversation-title">{selected.name}</h2><p>{selected.phone}</p></div><button className="btn" onClick={() => setSelected(null)}>Fechar</button></div>{qualification && <div className={styles.message}><h3>Resumo para a equipe</h3><p>{qualification}</p></div>}{messageError && <p role="alert" className={styles.error}>{messageError}</p>}{messageLoading ? <p>Carregando conversa…</p> : messages.slice().reverse().map(message => <article className={styles.message} key={message.id}><small>{timestamp(message.created_at)}</small><p><strong>Contato</strong><br />{message.incoming}</p>{message.reply && <p className={styles.reply}><strong>Bot</strong><br />{message.reply}</p>}<small>{states[message.state] ?? message.state}</small></article>)}{selected.lead_id && !["sem_interesse", "convertido"].includes(selected.status ?? "") && <button className="btn primary" disabled={!!busyId} onClick={() => void setHuman(selected.lead_id!, !selected.bot_paused)}>{selected.bot_paused ? "Retomar bot" : "Assumir atendimento"}</button>}</dialog>}
   </div>;
 }
