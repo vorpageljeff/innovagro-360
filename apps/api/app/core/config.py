@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     evolution_organization_id: str = ''
     evolution_webhook_secret: str = ''
     evolution_bot_enabled: bool = False
+    evolution_excluded_phones: str = ''
     openai_api_key: str = ''
     whatsapp_ai_enabled: bool = False
     whatsapp_ai_model: str = ''

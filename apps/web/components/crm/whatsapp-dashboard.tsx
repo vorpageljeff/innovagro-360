@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, CheckCircle2, MessageCircle, RefreshCw, ShieldAlert, UsersRound, Workflow } from "lucide-react";
 import { AutomationPanel } from "./automation-panel";
 import { WhatsAppAIPanel } from "./whatsapp-ai-panel";
+import { WhatsAppLeads } from "./whatsapp-leads";
 import styles from "./whatsapp-dashboard.module.css";
 
 type Connection = { configured: boolean; bot_enabled: boolean; state: string };
@@ -92,10 +93,10 @@ export function WhatsAppDashboard() {
   return <div className={`content ${styles.dashboard}`}>
     <div className="page-heading"><div><p className="eyebrow">ATENDIMENTO</p><h1 className="title">Controle do WhatsApp</h1><p className="subtitle">Acompanhe as conversas, o bot e a fila da sua equipe.</p></div><div className={styles.actions}><Link href="/crm" className="btn">Abrir Kanban</Link><button className="btn" disabled={loading} onClick={() => void load()}><RefreshCw size={15} className={loading ? styles.spin : ""} /> Atualizar</button></div></div>
     <section className={styles.connection}><div className={styles.connectionIcon}><MessageCircle size={27} /></div><div><span className={styles.connectionLabel}>SEU CANAL DE ATENDIMENTO</span><h2>{connection ? connectionLabels[connection.state] ?? "Estado da conexão desconhecido" : loading ? "Verificando conexão" : "Conexão não confirmada"}</h2><p>{connected ? connection?.bot_enabled ? "Canal disponível para receber mensagens e executar seus fluxos." : "Canal conectado. As respostas automáticas estão pausadas." : "Confira a conexão antes de usar o atendimento automático."}</p></div><div className={styles.connectionRight}><span className={`${styles.badge} ${connected ? styles.online : styles.offline}`}><i />{connected ? "Conectado" : "Não confirmado"}</span><button className="btn" onClick={() => setTab("flows")}>{connected ? "Gerenciar bot" : "Conectar WhatsApp"}</button></div></section>
-    <div className={styles.toolbar}><div className={styles.tabs}><button aria-pressed={tab === "overview"} onClick={() => setTab("overview")}>Visão geral</button><button aria-pressed={tab === "flows"} onClick={() => setTab("flows")}>Fluxos e bot</button></div><label>Período <select aria-label="Período do painel" value={days} onChange={e => { setData(null); setDays(Number(e.target.value)); }}><option value={1}>Hoje</option><option value={7}>Últimos 7 dias</option><option value={30}>Últimos 30 dias</option></select></label></div>
+    <div className={styles.toolbar}><div className={styles.tabs}><button aria-pressed={tab === "overview"} onClick={() => setTab("overview")}>Visão geral</button><button aria-pressed={tab === "leads"} onClick={() => setTab("leads")}>Leads para contato</button><button aria-pressed={tab === "flows"} onClick={() => setTab("flows")}>Fluxos e bot</button></div><label>Período <select aria-label="Período do painel" value={days} onChange={e => { setData(null); setDays(Number(e.target.value)); }}><option value={1}>Hoje</option><option value={7}>Últimos 7 dias</option><option value={30}>Últimos 30 dias</option></select></label></div>
     {error && <p className={styles.error} role="alert">{error} {data && "Os dados abaixo são da última atualização confirmada."}</p>}
     {notice && <p className={styles.notice} role="status">{notice}</p>}
-    {tab === "flows" ? <><WhatsAppAIPanel /><AutomationPanel /></> : <>
+    {tab === "leads" ? <WhatsAppLeads /> : tab === "flows" ? <><WhatsAppAIPanel /><AutomationPanel /></> : <>
       <div className={styles.metrics}>
         <article className={styles.metric}><span><ArrowDownLeft size={18} /> Mensagens recebidas</span><strong>{summary ? number(summary.received) : "—"}</strong><small>No período selecionado</small></article>
         <article className={styles.metric}><span><ArrowUpRight size={18} /> Respostas do bot</span><strong>{summary ? number(summary.sent) : "—"}</strong><small>Aceitas pelo Evolution no período</small></article>

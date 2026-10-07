@@ -11,6 +11,7 @@ from app.models.crm import Lead, AutomationRule, AutomationReceipt
 from app.schemas.crm import RuleInput, RuleOutput, ReceiptOutput, SimulationInput
 from app.services.evolution import configured, evolution_request, incoming_message, matching_rule, rule_plan
 from app.services.whatsapp_ai import AIUnavailable, answer as ai_answer, readiness
+from app.services.whatsapp_leads import excluded_phones
 
 router = APIRouter(prefix='/crm', tags=['Automações'])
 
@@ -124,7 +125,7 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
     if inserted is None:
         return {'state': 'duplicate'}
     receipt = (await db.execute(select(AutomationReceipt).where(AutomationReceipt.id == receipt_id))).scalar_one()
-    if lead is None or lead.status in ('sem_interesse', 'convertido') or lead.bot_paused or not settings.evolution_bot_enabled:
+    if lead is None or lead.status in ('sem_interesse', 'convertido') or lead.bot_paused or phone in excluded_phones() or not settings.evolution_bot_enabled:
         receipt.state = 'unmatched' if lead is None else 'paused'
         await db.commit()
         return {'state': receipt.state}

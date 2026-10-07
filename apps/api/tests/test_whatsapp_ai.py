@@ -62,7 +62,7 @@ def test_disabled_ai_never_calls_provider(monkeypatch):
 @pytest.mark.parametrize('mode, expected, generations, sends', [
     ('reply', 'sent', 1, 1), ('failure', 'ai_handoff', 1, 0),
     ('limit', 'ai_handoff', 0, 0), ('paused', 'paused', 0, 0),
-    ('duplicate', 'duplicate', 0, 0), ('human', 'sent', 0, 1),
+    ('duplicate', 'duplicate', 0, 0), ('human', 'sent', 0, 1), ('excluded', 'paused', 0, 0),
 ])
 def test_ai_webhook_preserves_pause_deduplication_handoff_and_tenant(monkeypatch, mode, expected, generations, sends):
     import app.api.v1.automations as module
@@ -70,7 +70,8 @@ def test_ai_webhook_preserves_pause_deduplication_handoff_and_tenant(monkeypatch
     for name, value in {'evolution_api_url': 'http://evolution:8080', 'evolution_api_key': 'test',
                         'evolution_instance': 'crm', 'evolution_organization_id': str(org),
                         'evolution_webhook_secret': 'secret', 'evolution_bot_enabled': mode != 'paused',
-                        'whatsapp_ai_enabled': True, 'whatsapp_ai_daily_limit': 100}.items():
+                        'whatsapp_ai_enabled': True, 'whatsapp_ai_daily_limit': 100,
+                        'evolution_excluded_phones': '5511999999999' if mode == 'excluded' else ''}.items():
         monkeypatch.setattr(module.settings, name, value)
     lead = SimpleNamespace(id=lead_id, status='respondeu', priority='media', next_contact_on=None, bot_paused=False)
     receipt = SimpleNamespace(state='received', reply='')
