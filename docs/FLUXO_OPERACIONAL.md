@@ -43,3 +43,8 @@ A automação não está instalada por este documento. Antes de criar o workflow
 - Backend remoto e banco: ainda não verificados. Não concluir ausência com base somente na cópia local.
 - A versão local inspecionada anteriormente tinha CRM em localStorage e autenticação de demonstração. Há alterações locais em andamento: reavaliar antes de implementar.
 - Pesquisa de leads: Nordeste, cidades até 60 mil habitantes, Instagram ativo e ausência de site próprio após verificação. Usar como referência ../Voragon_Comercial; não publicar seus dados no Git.
+
+
+### IA de atendimento — 07/10/2026
+
+Camada de IA preparada e publicada (`3ec96f4`) com memória limitada por contato, encaminhamento humano, limite conservador de chamadas e deduplicação antes de gerar. A integração e o envio permanecem desabilitados: faltam credencial/modelo/contexto aprovados pelo titular e teste de geração real. Consultar `WHATSAPP_IA.md`. A solicitação de IA não revoga a pausa de envio anterior. Nenhuma chamada paga ou mensagem real realizada nesta entrega.

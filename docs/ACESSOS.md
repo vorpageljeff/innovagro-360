@@ -90,3 +90,12 @@ URL https://innovagro-360.vercel.app/whatsapp, com acesso pelo menu comercial e 
 Painel consulta mensagens reais, respostas aceitas pelo Evolution, contatos novos, fila atual de atendimento humano, fluxos ativos e envios sem confirmação. Períodos de 1 a 30 dias usam calendário de São Paulo; fila humana é atual. Traz gráfico diário, últimas 20 mensagens, conversa com até 100 registros, assumir/retomar por contato e editor/simulador de fluxos. Pausa global solicitada pelo usuário foi mantida: conexão `open`, `EVOLUTION_BOT_ENABLED=false` antes e depois do deploy. Liberar um contato para bot não remove a pausa global.
 
 Validação: 38 testes passaram; build Next.js concluído; consulta ao PostgreSQL real conferida; navegador em produção verificou autenticação obrigatória, indicadores, períodos, conversa, versão de 390px sem overflow da página, fluxos e atualização automática a cada 30 segundos. Zero erros JavaScript. Nenhum envio foi realizado nesta entrega. Backup final `crm-20261007T150127Z.dump`, banco e instâncias Evolution copiados para diretório privado fora da VPS.
+
+
+## IA conversacional no WhatsApp — 07/10/2026
+
+Integração preparada e publicada a partir de `3ec96f4`. Backend release `/opt/innovagro/apps/crm360/releases/3ec96f4`, imagem `voragon-crm-api:ai-3ec96f4`; CURRENT_RELEASE atualizado. Frontend Vercel `dpl_3W3B17ZdAXAZU6jeKJUpkPAb7dgG`, promovido após consulta autenticada à nova rota no deployment protegido. Status disponível em WhatsApp → Fluxos e bot.
+
+Sem migração ou alteração dos dados existentes. API saudável e Evolution conectado (`open`); `EVOLUTION_BOT_ENABLED=false` e `WHATSAPP_AI_ENABLED=false` confirmados após deploy. Configuração pendente: chave da API, modelo e informações da empresa. Não foram realizadas chamadas reais à OpenAI nem envios de mensagens. Referência e comportamento: `docs/WHATSAPP_IA.md`.
+
+Validação: 50 testes passaram (provedor simulado), build Next.js aprovado, preview autenticado aprovado, navegador em produção verificou autenticação, painel IA pendente, pausa global, conexão, layout de 390px e ausência de erros JavaScript. Primeiro login do CRM durante a promoção falhou transitoriamente; a nova sessão posterior passou. Instruções privadas de configuração estão em `deploy/whatsapp-ai.env.example`; arquivo local privado sem chave preparado em `~/.config/voragon-crm/ai.env`, fora do Git. Uso real e custos dependem da conta do titular; ainda não foi validada geração real.
