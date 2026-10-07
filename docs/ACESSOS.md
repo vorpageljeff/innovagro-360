@@ -108,3 +108,18 @@ Código publicado `499b6ef22b3aa1552d7012b33844c9ef54a3da56`, enviado à branch 
 Sem migração ou alteração de leads existentes. Leitura real confirmou 32 leads, 1 com telefone disponível e 31 sem telefone. Configuração privada de exclusões atualizada com o número pessoal solicitado, incluindo a variante brasileira sem nono dígito; cópia privada da configuração anterior preservada no servidor. API saudável, Evolution `open`, bot e IA desabilitados após publicação.
 
 57 testes passaram; build Next.js local e Vercel aprovados; API real verificou disponibilidade, telefones ausentes, filtros, paginação e exclusões. Navegador em produção conferiu autenticação, lista real e filtros; fixtures interceptadas apenas no navegador validaram seleção, bloqueios, link de mensagem individual e formulário de telefone sem modificar o banco. Layout de 390px e ausência de erros JavaScript confirmados. Nenhuma mensagem enviada. Comportamento e limites em `WHATSAPP_LEADS.md`.
+
+
+## Qualificação e site Voragon — 07/10/2026
+
+Código publicado `a4eb3bc2133e9c1331f554865dd5240d84a6a767`, árvore `3ff90b641dd47da863d16a30201a51a2d04e802a`, branch `feature/crm-evolution-20261007`. Release `/opt/innovagro/apps/crm360/releases/a4eb3bc`, imagem `voragon-crm-api:qualify-a4eb3bc`, CURRENT_RELEASE atualizado; schema `20261007_0004` sem migração. Frontend `dpl_G2zs79z6rfF97jHJBv4qZzk4Sydj`, promovido após status autenticado no preview.
+
+Nome, serviço e necessidade são os campos essenciais (`WHATSAPP_AI_REQUIRED_FIELDS`); empresa opcional. Mensagem completa preparada pelo site, efetivamente recebida no webhook, gera nota de qualificação persistente e deduplicada, prioridade alta e fila humana com bot pausado no contato. Funciona mesmo com pausa global; telefones excluídos e leads encerrados não são encaminhados por esse caminho. Painel de conversa exibe o resumo. IA preparada coleta os mesmos campos antes do encaminhamento; fluxos de atendimento humano continuam prioritários.
+
+Conhecimento da empresa configurado a partir do conteúdo comercial aprovado do site. Faltam chave e modelo de IA. `EVOLUTION_BOT_ENABLED=false` e `WHATSAPP_AI_ENABLED=false` preservados, incluindo exclusões privadas do número pessoal. Evolution conectado; sem chamadas reais à OpenAI ou mensagens enviadas nesta entrega.
+
+61 testes passaram; builds Next.js local e Vercel aprovados. Teste adicional em cópia restaurada do PostgreSQL confirmou resumo persistido, prioridade alta, fila humana e evento duplicado ignorado, com envio e IA substituídos por funções que falhariam se chamadas. Banco temporário removido. Backup anterior `crm-20261007T165929Z.dump`, Evolution e instâncias copiados para diretório privado fora da VPS. Preview autenticado e navegador público conferiram parametrização, configuração pendente e pausa global.
+
+O push Git tradicional retornou erro interno remoto em três tentativas. O código foi salvo pelo conector GitHub, usando árvore idêntica conferida por hash e atualização da branch sem force, com SHA anterior esperado. Fetch posterior confirmou o commit remoto. Alterações locais não relacionadas foram preservadas e excluídas da publicação.
+
+Site público https://voragon.vercel.app e demonstração fictícia https://voragon.vercel.app/demo publicados no projeto original `voragon`, deployment `dpl_2RNKA1rqw8NhTJVQrZHz8gBaPP4m`. Formulário prepara rascunho local e exige confirmação do visitante no WhatsApp. Cinco testes do site, build/lint e navegador na produção aprovados; demonstração sem login, sem banco real e sem envio. Fontes e histórico dessa entrega documentados no README do projeto Voragon_Site.
