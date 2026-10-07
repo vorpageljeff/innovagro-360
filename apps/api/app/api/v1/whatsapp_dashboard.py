@@ -28,7 +28,7 @@ async def dashboard(db: DB, auth: Auth, days: int = Query(default=7, ge=1, le=30
         .where(Lead.organization_id == org, Lead.phone.is_not(None), Lead.created_at >= since))).scalar_one()
     queue_scope = [Lead.organization_id == org, Lead.phone.is_not(None), Lead.bot_paused.is_(True), Lead.status == 'respondeu']
     waiting = (await db.execute(select(func.count()).select_from(Lead).where(*queue_scope))).scalar_one()
-    attention = or_(AutomationReceipt.state == 'uncertain', and_(AutomationReceipt.state == 'sending',
+    attention = or_(AutomationReceipt.state == 'uncertain', and_(AutomationReceipt.state.in_(['sending', 'ai_generating']),
                                                               AutomationReceipt.created_at < now - timedelta(minutes=2)))
     attention_count = (await db.execute(select(func.count()).select_from(AutomationReceipt)
         .where(*receipt_scope, attention))).scalar_one()

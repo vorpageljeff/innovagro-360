@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, CheckCircle2, MessageCircle, RefreshCw, ShieldAlert, UsersRound, Workflow } from "lucide-react";
 import { AutomationPanel } from "./automation-panel";
+import { WhatsAppAIPanel } from "./whatsapp-ai-panel";
 import styles from "./whatsapp-dashboard.module.css";
 
 type Connection = { configured: boolean; bot_enabled: boolean; state: string };
@@ -17,7 +18,7 @@ type Dashboard = {
   recent: Conversation[]; queue: QueueItem[];
 };
 const priorities: Record<string, string> = { urgente: "Urgente", alta: "Alta", media: "Média", baixa: "Baixa" };
-const states: Record<string, string> = { sent: "Aceita pelo Evolution", paused: "Bot pausado", uncertain: "Envio sem confirmação", sending: "Envio iniciado", completed: "Fluxo concluído", no_rule: "Sem fluxo correspondente", received: "Recebida", unmatched: "Sem contato associado" };
+const states: Record<string, string> = { ai_cancelled: "Resposta da IA cancelada", ai_generating: "IA em processamento", ai_handoff: "IA encaminhou à equipe", sent: "Aceita pelo Evolution", paused: "Bot pausado", uncertain: "Envio sem confirmação", sending: "Envio iniciado", completed: "Fluxo concluído", no_rule: "Sem fluxo correspondente", received: "Recebida", unmatched: "Sem contato associado" };
 const connectionLabels: Record<string, string> = { open: "WhatsApp conectado", close: "WhatsApp desconectado", connecting: "Conectando ao WhatsApp", not_configured: "Configuração pendente" };
 const number = (value: number) => value.toLocaleString("pt-BR");
 function timestamp(value: string) { return new Date(value).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); }
@@ -94,7 +95,7 @@ export function WhatsAppDashboard() {
     <div className={styles.toolbar}><div className={styles.tabs}><button aria-pressed={tab === "overview"} onClick={() => setTab("overview")}>Visão geral</button><button aria-pressed={tab === "flows"} onClick={() => setTab("flows")}>Fluxos e bot</button></div><label>Período <select aria-label="Período do painel" value={days} onChange={e => { setData(null); setDays(Number(e.target.value)); }}><option value={1}>Hoje</option><option value={7}>Últimos 7 dias</option><option value={30}>Últimos 30 dias</option></select></label></div>
     {error && <p className={styles.error} role="alert">{error} {data && "Os dados abaixo são da última atualização confirmada."}</p>}
     {notice && <p className={styles.notice} role="status">{notice}</p>}
-    {tab === "flows" ? <AutomationPanel /> : <>
+    {tab === "flows" ? <><WhatsAppAIPanel /><AutomationPanel /></> : <>
       <div className={styles.metrics}>
         <article className={styles.metric}><span><ArrowDownLeft size={18} /> Mensagens recebidas</span><strong>{summary ? number(summary.received) : "—"}</strong><small>No período selecionado</small></article>
         <article className={styles.metric}><span><ArrowUpRight size={18} /> Respostas do bot</span><strong>{summary ? number(summary.sent) : "—"}</strong><small>Aceitas pelo Evolution no período</small></article>

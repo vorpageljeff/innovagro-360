@@ -1,7 +1,8 @@
 import secrets
 from uuid import UUID, uuid4
 from fastapi import APIRouter, Header, HTTPException, Request
-from sqlalchemy import select
+from datetime import datetime, timedelta, timezone
+from sqlalchemy import select, func
 from sqlalchemy.dialects.postgresql import insert
 from app.api.dependencies import Auth, DB
 from app.api.v1.crm import get_lead
@@ -9,8 +10,18 @@ from app.core.config import settings
 from app.models.crm import Lead, AutomationRule, AutomationReceipt
 from app.schemas.crm import RuleInput, RuleOutput, ReceiptOutput, SimulationInput
 from app.services.evolution import configured, evolution_request, incoming_message, matching_rule, rule_plan
+from app.services.whatsapp_ai import AIUnavailable, answer as ai_answer, readiness
 
 router = APIRouter(prefix='/crm', tags=['Automações'])
+
+
+@router.get('/evolution/ai/status')
+async def ai_status(auth: Auth):
+    owns_integration(auth)
+    missing = readiness()
+    return {'configured': not missing, 'enabled': settings.whatsapp_ai_enabled,
+            'bot_enabled': settings.evolution_bot_enabled, 'missing': missing,
+            'model': settings.whatsapp_ai_model, 'daily_limit': settings.whatsapp_ai_daily_limit}
 
 
 def owns_integration(auth):
@@ -120,6 +131,58 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
     rules = (await db.execute(select(AutomationRule).where(AutomationRule.organization_id == org,
         AutomationRule.enabled.is_(True)).order_by(AutomationRule.position, AutomationRule.created_at, AutomationRule.id))).scalars().all()
     rule = matching_rule(rules, text)
+    # Explicit human/terminal flows always take precedence over AI.
+    if settings.whatsapp_ai_enabled and (rule is None or
+            not rule.handoff and rule.status not in ('sem_interesse', 'convertido')):
+        receipt.state = 'ai_generating'
+        # Reserve before the paid call; repeated webhooks must not generate twice.
+        await db.commit()
+        lead = (await db.execute(select(Lead).where(Lead.id == lead.id, Lead.organization_id == org)
+            .with_for_update().execution_options(populate_existing=True))).scalar_one()
+        if lead.bot_paused or lead.status in ('sem_interesse', 'convertido') or not settings.evolution_bot_enabled:
+            receipt.state = 'paused'
+            await db.commit()
+            return {'state': receipt.state}
+        # Conservative rolling cap includes fixed replies and in-flight claims.
+        used = (await db.execute(select(func.count(AutomationReceipt.id)).where(
+            AutomationReceipt.organization_id == org,
+            AutomationReceipt.created_at >= datetime.now(timezone.utc) - timedelta(days=1),
+            AutomationReceipt.state.notin_(['paused', 'no_rule', 'unmatched'])))).scalar_one()
+        history = (await db.execute(select(AutomationReceipt).where(
+            AutomationReceipt.organization_id == org, AutomationReceipt.lead_id == lead.id,
+            AutomationReceipt.id != receipt_id)
+            .order_by(AutomationReceipt.created_at.desc(), AutomationReceipt.id.desc()).limit(6))).scalars().all()
+        try:
+            if used > settings.whatsapp_ai_daily_limit:
+                raise AIUnavailable()
+            generated = await ai_answer(list(reversed(history)), text)
+            receipt.reply = generated.reply
+            lead.priority = generated.priority
+            lead.status = 'respondeu'
+            lead.next_contact_on = None
+            lead.bot_paused = generated.handoff
+        except AIUnavailable:
+            lead.bot_paused = True
+            lead.priority = 'alta'
+            lead.status = 'respondeu'
+            lead.next_contact_on = None
+            receipt.state = 'ai_handoff'
+            await db.commit()
+            return {'state': receipt.state}
+        receipt.state = 'sending'
+        await db.commit()
+        await db.refresh(lead)
+        if lead.status in ('sem_interesse', 'convertido') or (lead.bot_paused and not generated.handoff):
+            receipt.state = 'ai_cancelled'
+            receipt.reply = ''
+        else:
+            try:
+                await evolution_request('POST', 'message/sendText', {'number': phone, 'text': receipt.reply})
+                receipt.state = 'sent'
+            except HTTPException:
+                receipt.state = 'uncertain'
+        await db.commit()
+        return {'state': receipt.state}
     if rule is None:
         receipt.state = 'no_rule'
         await db.commit()

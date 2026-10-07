@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     evolution_organization_id: str = ''
     evolution_webhook_secret: str = ''
     evolution_bot_enabled: bool = False
+    openai_api_key: str = ''
+    whatsapp_ai_enabled: bool = False
+    whatsapp_ai_model: str = ''
+    whatsapp_ai_knowledge: str = Field(default='', max_length=8000)
+    whatsapp_ai_daily_limit: int = Field(default=100, ge=1, le=1000)
     access_token_minutes: int = 15
     refresh_token_days: int = 30
 
@@ -32,4 +37,3 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
-
