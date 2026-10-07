@@ -41,3 +41,8 @@ Validação da instalação completa: 35 testes, build Next.js e teste de execu�
 ## Pausa solicitada em 07/10/2026
 
 Após confirmar o WhatsApp conectado, Jefferson solicitou suspender os envios da própria instância. `EVOLUTION_BOT_ENABLED=false` foi gravado na configuração privada persistente, e a API foi recriada e conferida com bot desabilitado. O WhatsApp permanece conectado para receber e registrar mensagens. Os fluxos existentes foram preservados; o bloqueio global impede suas respostas automáticas. Não reativar os envios sem nova instrução explícita do usuário. Novos deployments devem preservar esta configuração.
+
+
+## Painel de controle
+
+`/whatsapp` exibe dados reais com atualização a cada 30 segundos quando a aba está visível, filtros Hoje/7 dias/30 dias, gráfico, fila humana e conversas. Contagens de resposta significam aceitação pelo Evolution, não entrega ou leitura confirmada. Envios `uncertain` e `sending` há mais de dois minutos são destacados para conferência. A fila atual lista até 20 contatos por prioridade. A tela mantém a pausa global e não reativa envios ao liberar um contato. Código `6050e62`, deploy `dpl_EZZFMbNVDzEpNfgrTcFs6Lyt8zQZ`, validados com 38 testes e navegador em produção.

@@ -81,3 +81,12 @@ Backup antes da migração: `crm-20261007T121119Z.dump`, acompanhado do banco e 
 ### Respostas automáticas pausadas por Jefferson — 07/10/2026
 
 Evolution confirmou conexão `open` com a conta indicada pelo usuário. Em seguida, a pedido explícito de Jefferson, a configuração persistente da API foi alterada para `EVOLUTION_BOT_ENABLED=false`; API recriada e flag conferida. Manter essa pausa nos próximos deployments. A conexão e os fluxos foram preservados. Não reativar envios sem nova instrução do usuário.
+
+
+## Painel de controle WhatsApp — 07/10/2026
+
+URL https://innovagro-360.vercel.app/whatsapp, com acesso pelo menu comercial e pelo CRM. API/interface publicadas a partir de `6050e62`; release backend `/opt/innovagro/apps/crm360/releases/6050e62`, imagem `voragon-crm-api:dashboard-6050e62`. Deploy Vercel `dpl_EZZFMbNVDzEpNfgrTcFs6Lyt8zQZ` promovido após consulta autenticada à nova API. Nenhuma migração de banco foi necessária.
+
+Painel consulta mensagens reais, respostas aceitas pelo Evolution, contatos novos, fila atual de atendimento humano, fluxos ativos e envios sem confirmação. Períodos de 1 a 30 dias usam calendário de São Paulo; fila humana é atual. Traz gráfico diário, últimas 20 mensagens, conversa com até 100 registros, assumir/retomar por contato e editor/simulador de fluxos. Pausa global solicitada pelo usuário foi mantida: conexão `open`, `EVOLUTION_BOT_ENABLED=false` antes e depois do deploy. Liberar um contato para bot não remove a pausa global.
+
+Validação: 38 testes passaram; build Next.js concluído; consulta ao PostgreSQL real conferida; navegador em produção verificou autenticação obrigatória, indicadores, períodos, conversa, versão de 390px sem overflow da página, fluxos e atualização automática a cada 30 segundos. Zero erros JavaScript. Nenhum envio foi realizado nesta entrega. Backup final `crm-20261007T150127Z.dump`, banco e instâncias Evolution copiados para diretório privado fora da VPS.
