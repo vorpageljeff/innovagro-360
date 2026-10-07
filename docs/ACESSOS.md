@@ -63,3 +63,16 @@ Evolution v2.3.7 instalado no mesmo projeto Docker, rede privada da integração
 Verificação em navegador na produção: login, 31 contatos, gravação da prioridade existente e persistência após reload, cadastro/leitura do fluxo pausado, QR renderizado, telas desktop e 390px; zero erros JavaScript. Envio/recebimento reais ainda dependem da vinculação do WhatsApp. A rota pública `/health` retornou 404 no proxy nesta conferência; o health interno Docker está saudável, e as rotas públicas autenticadas responderam 200 após login.
 
 Backup recuperável anterior à migração e limites estão em `EVOLUTION_AUTOMACOES.md`. O script diário foi estendido para incluir banco e instâncias do Evolution. Cópias externas automáticas continuam pendentes.
+
+
+## Atendimento completo configurado — 07/10/2026
+
+Código publicado `29b3422e274eafd0ab00aa7e83649da3f447ccb6`, branch `feature/crm-evolution-20261007`. Release backend `/opt/innovagro/apps/crm360/releases/29b3422`, imagem `voragon-crm-api:bot-29b3422`, schema `20261007_0004`; `CURRENT_RELEASE` atualizado. Frontend produção `dpl_dGLKLc6Hw6k9zJc1ZdXJU8FGbBw6`, promovido após validação da API autenticada e simulação através da Vercel.
+
+Seis fluxos comerciais foram cadastrados ativos, com ordem de execução, menu 1/2/3, serviços, orçamento, atendente, suporte e encerramento. Respostas não incluem preços, prazos ou promessas comerciais inventadas. Contatos novos por WhatsApp entram no Kanban sem Instagram fictício. Encaminhamento humano pausa novas respostas automáticas por contato; bot pode ser retomado pela interface.
+
+35 testes passaram. Teste adicional em PostgreSQL restaurado e isolado confirmou criação de contato, menu, orçamento, encaminhamento humano, rejeição de evento duplicado e pausa das mensagens seguintes. Os dois envios desse teste foram substituídos por função simulada; zero mensagens externas. Banco temporário removido.
+
+Produção verificada no navegador: login, 31 contatos, assumir/retomar atendimento, cinco caminhos no simulador, seis fluxos persistentes após reload, QR e tela de 390px; zero erros JavaScript. `/health` público retornou 200 após o container ficar saudável. Os 404 observados durante substituição da API ocorreram antes da liberação do container pelo proxy; não persistiram. Evolution permanece aguardando vinculação pelo QR. A entrega não comprova envio real, que depende do aparelho vinculado e de uma mensagem recebida.
+
+Backup antes da migração: `crm-20261007T121119Z.dump`, acompanhado do banco e instâncias Evolution; cópias privadas fora da VPS. Restauração e migração desse backup foram usadas no teste PostgreSQL descrito acima. Backup final da configuração também gerado e copiado para fora da VPS. Permanecem pendentes cópias externas automáticas, em vez da cópia manual realizada nesta sessão.
