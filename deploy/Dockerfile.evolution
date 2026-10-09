@@ -1,0 +1,6 @@
+FROM evoapicloud/evolution-api@sha256:1bd8afc4a6cf48822e6cf02469aeae7bd35a12a6b616eacd1291926307f4d339
+WORKDIR /evolution
+# Keep Evolution 2.3.7 and its persisted sessions; update the protocol library.
+# No message resend loop or account-restriction bypass is installed.
+RUN npm install --ignore-scripts --no-audit --no-fund --save-exact baileys@7.0.0-rc14 \
+    && node --input-type=module -e "const b=await import('baileys'); for(const k of ['makeWASocket','DisconnectReason','makeCacheableSignalKeyStore']) if(!b[k]) throw Error('Missing export '+k)"

@@ -1,0 +1,5 @@
+services:
+  evolution:
+    image: voragon-evolution:2.3.7-baileys-rc14
+    environment:
+      LOG_BAILEYS: warn
