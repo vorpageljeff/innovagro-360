@@ -94,11 +94,14 @@ def ai_may_handle_rule(rule):
 def is_automatic_reply(text):
     """Recognize explicit automated notices and common business auto-reply templates."""
     normalized = normalize_text(text)
-    explicit = ('mensagem automatica', 'resposta automatica', 'atendimento automatico',
-                'sou um bot', 'sou o assistente virtual', 'sou um assistente virtual',
+    explicit = ('sou um bot', 'sou o assistente virtual', 'sou um assistente virtual',
                 'sou a assistente virtual', 'sou uma assistente virtual',
                 'obrigado por entrar em contato', 'obrigada por entrar em contato')
     if any(term in normalized for term in explicit):
+        return True
+    notice = re.search(r'(?:^|[\n[(])\s*[*_]*\s*(?:mensagem|resposta|atendimento) automatic[ao]\b', normalized)
+    if notice or any(term in normalized for term in ('esta e uma mensagem automatica', 'essa e uma mensagem automatica',
+            'esta e uma resposta automatica', 'mensagem automatica:', 'resposta automatica:')):
         return True
     acknowledgment = re.search(r'\b(?:agradece|agradecemos) (?:o |seu |o seu )?contato\b', normalized)
     if acknowledgment:

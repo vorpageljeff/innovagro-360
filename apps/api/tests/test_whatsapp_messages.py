@@ -92,7 +92,7 @@ def test_automatic_business_replies_are_detected(text):
     assert is_automatic_reply(text)
 
 
-@pytest.mark.parametrize('text', ['Oi, como posso ajudar?', 'Quero um orçamento', 'Tenho interesse em sistemas', 'Obrigado, vou falar com meu sócio'])
+@pytest.mark.parametrize('text', ['Oi, como posso ajudar?', 'Quero um orçamento', 'Tenho interesse em sistemas', 'Obrigado, vou falar com meu sócio', 'Quero um atendimento automático para a minha empresa', 'Preciso de um sistema de mensagem automática para meus clientes'])
 def test_human_messages_do_not_match_bot_templates(text):
     from app.services.evolution import is_automatic_reply
     assert not is_automatic_reply(text)
