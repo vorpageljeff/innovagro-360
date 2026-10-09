@@ -155,3 +155,9 @@ EVOLUTION_BOT_ENABLED=true no empresarial conectado crm360-business, WHATSAPP_AI
 ## Atualização: IA de teste ativada — 08/10/2026
 
 Autorização posterior confirmou pessoal como remetente e empresarial como destinatário. Release 2f5a777, imagem voragon-crm-api:gemini-2f5a777, somente API recriada. Bot e Gemini habilitados, modo de testes ativo com apenas o pessoal e variante; demais contatos permanecem nos fluxos fixos. Timestamp separa histórico antigo do contexto enviado ao Gemini. Conexão empresarial aberta verificada; geração real e persistência já validadas no banco isolado. A confirmação ponta a ponta no WhatsApp continua pendente de mensagem do titular. Backup externo anterior à ativação: ~/.config/voragon-crm/backups/gemini-test-20261008/crm-20261009T024945Z.dump. Nenhuma migração ou envio WhatsApp pelo agente.
+
+## Continuidade do orçamento — 09/10/2026
+
+Teste real do titular confirmou recebimento/resposta no empresarial. Histórico da sessão registrou duas respostas enviadas, uma de boas-vindas e uma pela regra de orçamento, seguidas de mensagens recebidas sem resposta porque o contato estava pausado. Não foram registrados três envios para o mesmo pedido.
+
+Release 6e3c7dc permite à IA qualificar pedidos de orçamento/preço/valor antes de pausar, preservando encaminhamento imediato para humano, suporte e encerramento. Contatos fora da lista de teste continuam com fluxos fixos. Ao completar nome, serviço e necessidade, uma única resposta confirma encaminhamento ao Jefferson e continuidade por atendente, sem promessa de prazo. 77 testes aprovados; API publicada, sem frontend ou migração. Contato pessoal de teste retomado sem apagar histórico, após backup copiado para diretório privado externo (crm-quote-6e3c7dc.dump). Nenhuma mensagem enviada pelo agente; teste da nova conversa depende do titular.

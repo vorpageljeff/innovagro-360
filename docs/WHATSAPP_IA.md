@@ -44,3 +44,9 @@ Chave autenticou HTTP 200. gemini-2.5-flash-lite listado pelo catálogo, mas ger
 ## Teste pessoal no empresarial ativado — 08/10/2026
 
 Titular confirmou envio do pessoal para o empresarial. Release 2f5a777 habilita Gemini somente para esse telefone e sua variante brasileira, removidos da exclusão. Instância crm360-business aberta, pertencente ao número empresarial. Nenhum outro contato recebe geração Gemini. WHATSAPP_AI_TEST_SINCE limita histórico e notas à sessão atual; conversas antigas não são encaminhadas à IA. Lead pessoal já estava em respondeu, sem pausa; não houve alteração de dados de leads. API publicada sem recriar Evolution ou bancos. Mensagem real pelo WhatsApp ainda depende do teste do titular.
+
+## Continuidade do orçamento — 09/10/2026
+
+Teste real do titular confirmou recebimento/resposta no empresarial. Histórico da sessão registrou duas respostas enviadas, uma de boas-vindas e uma pela regra de orçamento, seguidas de mensagens recebidas sem resposta porque o contato estava pausado. Não foram registrados três envios para o mesmo pedido.
+
+Release 6e3c7dc permite à IA qualificar pedidos de orçamento/preço/valor antes de pausar, preservando encaminhamento imediato para humano, suporte e encerramento. Contatos fora da lista de teste continuam com fluxos fixos. Ao completar nome, serviço e necessidade, uma única resposta confirma encaminhamento ao Jefferson e continuidade por atendente, sem promessa de prazo. 77 testes aprovados; API publicada, sem frontend ou migração. Contato pessoal de teste retomado sem apagar histórico, após backup copiado para diretório privado externo (crm-quote-6e3c7dc.dump). Nenhuma mensagem enviada pelo agente; teste da nova conversa depende do titular.
