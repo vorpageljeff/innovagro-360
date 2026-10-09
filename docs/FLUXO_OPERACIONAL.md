@@ -48,3 +48,7 @@ A automação não está instalada por este documento. Antes de criar o workflow
 ### IA de atendimento — 07/10/2026
 
 Camada de IA preparada e publicada (`3ec96f4`) com memória limitada por contato, encaminhamento humano, limite conservador de chamadas e deduplicação antes de gerar. A integração e o envio permanecem desabilitados: faltam credencial/modelo/contexto aprovados pelo titular e teste de geração real. Consultar `WHATSAPP_IA.md`. A solicitação de IA não revoga a pausa de envio anterior. Nenhuma chamada paga ou mensagem real realizada nesta entrega.
+
+### Cadastro recebido do site — 08/10/2026
+
+Visitante revisa e autoriza antes do POST ao CRM; recebimento confirmado somente após gravação da API. Telefone no lead, e-mail e respostas no histórico. Mesma chave de envio não duplica; telefone e variante brasileira reutilizam cadastro. Não inventa Instagram, não inicia prospecção nem ativa bot. Limites e validações documentados em SITE_INTAKE.md. Implementação publicada `73b32ba`; bot e IA pausados.

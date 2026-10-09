@@ -123,3 +123,11 @@ Conhecimento da empresa configurado a partir do conteúdo comercial aprovado do 
 O push Git tradicional retornou erro interno remoto em três tentativas. O código foi salvo pelo conector GitHub, usando árvore idêntica conferida por hash e atualização da branch sem force, com SHA anterior esperado. Fetch posterior confirmou o commit remoto. Alterações locais não relacionadas foram preservadas e excluídas da publicação.
 
 Site público https://voragon.vercel.app e demonstração fictícia https://voragon.vercel.app/demo publicados no projeto original `voragon`, deployment `dpl_2RNKA1rqw8NhTJVQrZHz8gBaPP4m`. Formulário prepara rascunho local e exige confirmação do visitante no WhatsApp. Cinco testes do site, build/lint e navegador na produção aprovados; demonstração sem login, sem banco real e sem envio. Fontes e histórico dessa entrega documentados no README do projeto Voragon_Site.
+
+## Entrada direta de contatos pelo site — 08/10/2026
+
+API publicada a partir de `73b32ba7573a288347553eee5eb10fa80dd0044b`, confirmada no remoto `feature/crm-evolution-20261007`. Release `/opt/innovagro/apps/crm360/releases/73b32ba`, imagem `voragon-crm-api:intake-73b32ba`, CURRENT_RELEASE atualizado. Sem migração de schema. Contato recebido pelo endpoint público do site grava telefone no cadastro e e-mail/resumo no histórico, com prevenção de duplicatas e bot pausado. Referência: `SITE_INTAKE.md`.
+
+70 testes da API passaram. Backup anterior `crm-20261009T012345Z.dump` (nome UTC; realizado em 08/10 no horário de São Paulo) copiado para diretório privado externo. Restauração em banco temporário confirmou contato persistente em nova sessão, notas completas, idempotência, deduplicação de variante de telefone, conflito de chave e limite por contato; banco temporário removido. Nenhum lead fictício gravado na produção. API pública verificou health 200, preflight 200 e rejeição de dados incompletos 422. Bot e IA continuam desabilitados; nenhuma mensagem enviada.
+
+Site Voragon publicado READY `dpl_GoNHsRAHARFc73S71ELDtQmZBghQ`, com página `/conversar`, e-mail/telefone, autorização e envio explícito ao CRM. WhatsApp opcional. Nenhuma alteração ou publicação do frontend do CRM necessária. Dados do contato aparecem no histórico de atendimento.
