@@ -28,6 +28,8 @@ export function WhatsAppLeads({ initialLeadId }: { initialLeadId?: string }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [selected, setSelected] = useState<Record<string, Lead>>({});
+  const [batch, setBatch] = useState<{ lead: Lead; text: string; request_id: string; state: string }[]>([]);
+  const batchLock = useRef(false);
   const [editing, setEditing] = useState<Lead | null>(null);
   const [composing, setComposing] = useState<Lead | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -184,8 +186,31 @@ export function WhatsAppLeads({ initialLeadId }: { initialLeadId?: string }) {
     finally { setBusy(false); }
   }
   function toggle(lead: Lead) {
-    if (!lead.can_message) return;
-    setSelected(old => { const next = { ...old }; if (next[lead.id]) delete next[lead.id]; else next[lead.id] = lead; return next; });
+    if (!lead.can_message || busy) return;
+    setSelected(old => { const next = { ...old }; if (next[lead.id]) delete next[lead.id]; else if (Object.keys(next).length < 5) next[lead.id] = lead; return next; });
+  }
+  function prepareBatch() {
+    if (busy || !template.trim() || !selection.length || selection.length > 5) return;
+    setBatch(selection.map(lead => ({ lead, text: template.replaceAll("{empresa}", lead.name), request_id: crypto.randomUUID(), state: "prepared" })));
+  }
+  async function sendBatch() {
+    if (batchLock.current || busy || !batch.length) return;
+    batchLock.current = true; setBusy(true); setError("");
+    try {
+      for (const item of batch) {
+        if (item.state !== "prepared" && item.state !== "unconfirmed") continue;
+        try {
+          const result = await request(`evolution/leads/${item.lead.id}/send`, undefined, { text: item.text, request_id: item.request_id, expected_phone: item.lead.phone });
+          setBatch(old => old.map(row => row.request_id === item.request_id ? { ...row, state: result.state } : row));
+          if (result.state !== "sent") break;
+          await new Promise(resolve => setTimeout(resolve, 2500));
+        } catch (e) {
+          setBatch(old => old.map(row => row.request_id === item.request_id ? { ...row, state: "unconfirmed" } : row));
+          setError((e as Error).message + " Lote interrompido. Consulte o resultado antes de continuar."); break;
+        }
+      }
+      await load();
+    } finally { batchLock.current = false; setBusy(false); }
   }
   async function savePhone(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!editing || busy) return;
@@ -201,9 +226,9 @@ export function WhatsAppLeads({ initialLeadId }: { initialLeadId?: string }) {
     const ai = inbox?.items.find(x => x.lead_id === a.id), bi = inbox?.items.find(x => x.lead_id === b.id);
     return Number(!!bi?.unread) - Number(!!ai?.unread) || (bi?.last_incoming_at ?? "").localeCompare(ai?.last_incoming_at ?? "");
   });
-  const ready = rows.filter(row => row.can_message);
+
   const selection = Object.values(selected);
-  const allSelected = ready.length > 0 && ready.every(row => selected[row.id]);
+
   const text = draft?.text ?? "";
   return <section className={`panel ${styles.panel}`}>
     <div className={styles.heading}><div><h2>Leads para contato</h2><p>Respostas novas aparecem com um contador. Clique no contato para abrir o chat.</p></div><button className="btn" disabled={loading} onClick={() => void load()}>Atualizar lista</button></div>
@@ -223,11 +248,11 @@ export function WhatsAppLeads({ initialLeadId }: { initialLeadId?: string }) {
           <div className={styles.listHeading}><strong>Conversas</strong><span className={styles.badge}>{inbox?.unread ?? 0} não lidas</span></div>
           {rows.map(lead => {
             const item = inbox?.items.find(x => x.lead_id === lead.id);
-            return <button key={lead.id} className={`${styles.contact} ${composing?.id === lead.id ? styles.activeContact : ""}`} disabled={busy} onClick={() => void openChat(lead)} aria-label={`Abrir conversa com ${lead.name}${item?.unread ? `, ${item.unread} mensagens não lidas` : ""}`} aria-pressed={composing?.id === lead.id}>
+            return <div key={lead.id} className={styles.contactRow}><input type="checkbox" aria-label={`Selecionar ${lead.name} para envio`} checked={!!selected[lead.id]} disabled={busy || !!batch.length || !lead.can_message || (!selected[lead.id] && selection.length >= 5)} onChange={() => toggle(lead)} /><button className={`${styles.contact} ${composing?.id === lead.id ? styles.activeContact : ""}`} disabled={busy} onClick={() => void openChat(lead)} aria-label={`Abrir conversa com ${lead.name}${item?.unread ? `, ${item.unread} mensagens não lidas` : ""}`} aria-pressed={composing?.id === lead.id}>
               <span className={styles.avatar}>{lead.name.slice(0,1).toUpperCase()}</span>
               <span className={styles.contactInfo}><strong>{lead.name}</strong><small>{lead.phone ?? "Sem telefone"} · {priorities[lead.priority]}</small><span className={styles.preview}>{item?.last_incoming ?? lead.city ?? "Nenhuma resposta ainda"}</span></span>
               {!!item?.unread && <span className={styles.badge}>{item.unread}</span>}
-            </button>;
+            </button></div>;
           })}
         </aside>
         <div className={styles.chatPane}>
@@ -252,7 +277,15 @@ export function WhatsAppLeads({ initialLeadId }: { initialLeadId?: string }) {
       {!rows.length && <p className={styles.empty}>Nenhum lead encontrado com estes filtros.</p>}
       <div className={styles.pagination}><span>{data.total ? `${offset + 1}–${Math.min(offset + rows.length, data.total)} de ${data.total}` : "0 leads"}</span><button className="btn" disabled={offset === 0} onClick={() => { setOffset(Math.max(0, offset - 25)); setData(null); }}>Anterior</button><button className="btn" disabled={offset + 25 >= data.total} onClick={() => { setOffset(offset + 25); setData(null); }}>Próxima</button></div>
     </>}
-    {!!selection.length && <div className={styles.selection}><div className={styles.heading}><h3>{selection.length} contatos selecionados</h3><button className="btn" onClick={() => setSelected({})}>Limpar seleção</button></div>{selection.map(lead => <div key={lead.id} className={styles.selectedRow}><span>{lead.name} <small>{lead.phone}</small></span><button className="btn" onClick={() => setComposing(lead)}>Abrir conversa</button><button className="btn" aria-label={`Remover ${lead.name} da seleção`} onClick={() => toggle(lead)}>Remover</button></div>)}</div>}
+    <div className={styles.selection}>
+      <div className={styles.heading}><h3>{selection.length} de 5 contatos selecionados</h3><button className="btn" disabled={busy || !!batch.length} onClick={() => setSelected({})}>Limpar seleção</button></div>
+      <p className={styles.hint}>Marque os contatos na lista. O lote usa a mensagem padrão personalizada e o número empresarial.</p>
+      {!batch.length && <button className="btn primary" disabled={busy || !selection.length || !template.trim()} onClick={prepareBatch}>Revisar lote de {selection.length} mensagens</button>}
+      {!!batch.length && <><h3>Revise antes de disparar</h3>{batch.map(item => <div key={item.request_id} className={styles.selectedRow}><span><strong>{item.lead.name}</strong><small>{item.lead.phone}</small><p style={{ whiteSpace: "pre-wrap" }}>{item.text}</p><strong>{item.state === "prepared" ? "Aguardando disparo" : item.state === "sent" ? "Aceita pelo Evolution · entrega ainda não confirmada" : "Sem confirmação · lote interrompido"}</strong></span></div>)}
+        <div className={styles.actions}><button className="btn primary" disabled={busy || !batch.some(item => ["prepared", "unconfirmed"].includes(item.state))} onClick={() => void sendBatch()}>{busy ? "Disparando lote…" : batch.some(item => item.state === "unconfirmed") ? "Consultar resultado e continuar" : "Disparar mensagens selecionadas"}</button><button className="btn" disabled={busy || batch.some(item => !["prepared", "sent"].includes(item.state))} onClick={() => { setBatch([]); setSelected({}); }}>Fechar lote</button></div>
+        <p className={styles.hint}>O lote para se um envio ficar sem confirmação. Consultar novamente usa o mesmo identificador para evitar duplicidade. Aceitação pela API não confirma entrega no celular do cliente.</p>
+      </>}
+    </div>
     <p className={styles.hint}>O envio usa o WhatsApp empresarial conectado. Abrir a conversa ou salvar um rascunho não envia mensagens. A IA responde até três vezes; assumir atendimento pausa o bot.</p>
     {editing && <dialog className={styles.dialog} ref={phoneDialog} aria-labelledby="phone-title" onCancel={event => { if (busy) event.preventDefault(); else setEditing(null); }} onClose={() => setEditing(null)}><form onSubmit={e => void savePhone(e)}><h2 id="phone-title">Telefone de {editing.name}</h2><label className="field">WhatsApp com código do país e DDD<input name="phone" type="tel" defaultValue={editing.phone ?? ""} placeholder="55 + DDD + número" maxLength={25} required /></label><p className={styles.hint}>O telefone será salvo no contato existente, preservando seu histórico.</p>{error && <p role="alert" className={styles.error}>{error}</p>}<div className={styles.actions}><button type="button" className="btn" disabled={busy} onClick={() => setEditing(null)}>Cancelar</button><button className="btn primary" disabled={busy}>Salvar telefone</button></div></form></dialog>}
 
