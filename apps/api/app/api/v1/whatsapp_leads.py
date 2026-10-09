@@ -1,4 +1,5 @@
 from typing import Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Query
 from sqlalchemy import case, func, or_, select
@@ -14,11 +15,13 @@ router = APIRouter(prefix='/crm/evolution', tags=['Leads WhatsApp'])
 
 @router.get('/leads')
 async def leads(db: DB, auth: Auth, q: str = Query(default='', max_length=160),
-                audience: Literal['all', 'ready', 'missing_phone'] = 'all',
+                audience: Literal['all', 'ready', 'missing_phone'] = 'all', lead_id: UUID | None = None,
                 priority: Priority | None = None, status: Status | None = None,
                 offset: int = Query(default=0, ge=0), limit: int = Query(default=25, ge=1, le=100)):
     owns_integration(auth)
     scope = [Lead.organization_id == auth.organization_id]
+    if lead_id is not None:
+        scope.append(Lead.id == lead_id)
     if q.strip():
         term = q.strip()
         scope.append(or_(Lead.name.icontains(term, autoescape=True), Lead.city.icontains(term, autoescape=True),

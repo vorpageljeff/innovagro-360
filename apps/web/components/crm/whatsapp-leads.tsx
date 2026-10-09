@@ -17,7 +17,7 @@ async function request(path: string, signal?: AbortSignal, body?: unknown) {
   return data;
 }
 
-export function WhatsAppLeads() {
+export function WhatsAppLeads({ initialLeadId }: { initialLeadId?: string }) {
   const [q, setQ] = useState("");
   const [audience, setAudience] = useState("all");
   const [priority, setPriority] = useState("");
@@ -36,6 +36,7 @@ export function WhatsAppLeads() {
   const [messageLoading, setMessageLoading] = useState(false);
   const [chatError, setChatError] = useState("");
   const [messageNotice, setMessageNotice] = useState("");
+  const [qualification, setQualification] = useState("");
   const [templateBusy, setTemplateBusy] = useState(false);
   const sendLock = useRef(false);
   const chatEnd = useRef<HTMLDivElement | null>(null);
@@ -91,6 +92,14 @@ export function WhatsAppLeads() {
     document.addEventListener("visibilitychange", refresh);
     return () => { active = false; clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
   }, [refreshInbox, load]);
+  useEffect(() => {
+    if (!initialLeadId || !/^[0-9a-f-]{36}$/.test(initialLeadId)) return;
+    const abort = new AbortController();
+    void request(`evolution/leads?lead_id=${initialLeadId}&limit=1`, abort.signal)
+      .then(result => { if (!abort.signal.aborted && result.items[0]) setComposing(result.items[0]); })
+      .catch(e => { if (!abort.signal.aborted) setError((e as Error).message); });
+    return () => abort.abort();
+  }, [initialLeadId]);
   const composingId = composing?.id;
   useEffect(() => {
     if (!conversation || conversation.lead_id !== composingId || document.hidden || messageLoading) return;
@@ -117,9 +126,13 @@ export function WhatsAppLeads() {
   useEffect(() => {
     if (!composingId) return;
     const abort = new AbortController();
-    setDraft(null); setConversation(null); setChatError(""); setMessageNotice(""); setMessageLoading(true);
-    void Promise.all([request(`evolution/leads/${composingId}/draft`, abort.signal), request(`evolution/leads/${composingId}/conversation`, abort.signal)])
-      .then(([nextDraft, chat]) => { if (!abort.signal.aborted) { setDraft(nextDraft); setConversation(chat); } })
+    setDraft(null); setConversation(null); setQualification(""); setChatError(""); setMessageNotice(""); setMessageLoading(true);
+    void Promise.all([request(`evolution/leads/${composingId}/draft`, abort.signal), request(`evolution/leads/${composingId}/conversation`, abort.signal), request(`leads/${composingId}/activities`, abort.signal).catch(() => [])])
+      .then(([nextDraft, chat, activities]) => { if (!abort.signal.aborted) {
+        setDraft(nextDraft.state === "sent" ? { text: "", request_id: crypto.randomUUID(), state: null } : nextDraft);
+        setConversation(chat);
+        setQualification(activities.find((item: { note: string }) => item.note.startsWith("Qualificação do WhatsApp\n"))?.note ?? "");
+      } })
       .catch(e => { if (!abort.signal.aborted) setChatError((e as Error).message); })
       .finally(() => { if (!abort.signal.aborted) setMessageLoading(false); });
     let refreshing = false;
@@ -217,10 +230,11 @@ export function WhatsAppLeads() {
           {composing && <div className={styles.chatContent}>
       <div className={styles.heading}><div><h2 id="message-title">Conversa com {composing.name}</h2><p>{composing.phone} · Empresarial: (45) 99103-8233</p></div><button className="btn" disabled={busy} onClick={() => setComposing(null)}>Voltar à lista</button></div>
       <div className={styles.actions}><button className="btn" disabled={busy} onClick={() => setEditing(composing)}>{composing.phone ? "Editar telefone" : "Cadastrar telefone"}</button><span>{conversation?.bot_paused ? "Atendimento humano · bot pausado" : "Atendimento com IA"}</span><button className="btn" disabled={busy || !conversation || conversation.bot_paused} onClick={() => void takeOver()}>{conversation?.bot_paused ? "Atendimento com você" : "Assumir atendimento"}</button></div>
+      {qualification && <details className={styles.template}><summary>Resumo para a equipe</summary><p style={{ whiteSpace: "pre-wrap" }}>{qualification}</p></details>}
       {conversation?.warning && <p role="status" className={styles.hint}>{conversation.warning}</p>}
       <div className={styles.chatHistory} aria-label="Histórico da conversa">{messageLoading ? <p>Carregando conversa…</p> : conversation?.messages.length ? conversation.messages.map(message => <article key={message.id} className={`${styles.bubble} ${message.direction === "outgoing" ? styles.outgoing : ""}`}><small>{message.direction === "outgoing" ? "Voragon" : composing.name}</small><p>{message.text}</p><small>{new Date(message.at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}{["automatic", "auto_reply_ignored"].includes(message.state) ? " · Mensagem automática do contato" : message.state === "uncertain" ? " · Sem confirmação" : message.state === "sending" ? " · Envio em andamento" : ""}</small></article>) : <p className={styles.empty}>Ainda não há mensagens nesta conversa.</p>}<div ref={chatEnd} /></div>
       {chatError && <p role="alert" className={styles.error}>{chatError}</p>}{messageNotice && <p role="status">{messageNotice}</p>}
-      <label className="field">Mensagem<textarea aria-label="Mensagem" value={text} rows={4} maxLength={1500} disabled={busy || !draft || !!draft.state} placeholder="Revise a mensagem para este contato" onChange={e => setDraft(old => old ? { ...old, text: e.target.value } : old)} /></label>
+      <label className="field">Escreva sua mensagem<textarea aria-label="Mensagem" value={text} rows={4} maxLength={1500} disabled={busy || !draft || !!draft.state} placeholder="Escreva aqui para responder pelo WhatsApp empresarial" onChange={e => setDraft(old => old ? { ...old, text: e.target.value } : old)} /></label>
       <div className={styles.actions}>
         {draft?.state ? <button className="btn" disabled={busy || draft.state !== "sent"} onClick={() => { setDraft(old => old ? { ...old, request_id: crypto.randomUUID(), state: null, text: "" } : old); setMessageNotice(""); }}>Preparar nova mensagem</button> : <><button className="btn" disabled={busy || !draft || !template.trim()} onClick={() => setDraft(old => old ? { ...old, text: template.replaceAll("{empresa}", composing.name) } : old)}>Usar mensagem padrão</button><button className="btn" disabled={busy || !draft || !text.trim()} onClick={() => void saveMessage()}>Salvar rascunho</button></>}
         <button className="btn primary" disabled={busy || !draft || !text.trim() || draft.state === "sent" || !composing.can_message || ["sem_interesse", "convertido"].includes(conversation?.status ?? "")} onClick={() => void sendMessage()}>{busy ? "Aguarde…" : draft?.state ? "Consultar resultado do envio" : "Enviar pelo empresarial"}</button>
