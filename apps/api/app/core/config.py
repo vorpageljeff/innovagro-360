@@ -1,3 +1,4 @@
+from datetime import datetime
 from functools import lru_cache
 from typing import Literal
 
@@ -24,6 +25,7 @@ class Settings(BaseSettings):
     whatsapp_ai_provider: Literal['openai', 'gemini'] = 'openai'
     whatsapp_ai_test_mode: bool = False
     whatsapp_ai_test_phones: str = ''
+    whatsapp_ai_test_since: datetime | None = None
     whatsapp_ai_enabled: bool = False
     whatsapp_ai_model: str = ''
     whatsapp_ai_knowledge: str = Field(default='', max_length=8000)

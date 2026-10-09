@@ -165,17 +165,23 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
             AutomationReceipt.organization_id == org,
             AutomationReceipt.created_at >= datetime.now(timezone.utc) - timedelta(days=1),
             AutomationReceipt.state.notin_(['paused', 'no_rule', 'unmatched'])))).scalar_one()
-        history = (await db.execute(select(AutomationReceipt).where(
+        history_query = select(AutomationReceipt).where(
             AutomationReceipt.organization_id == org, AutomationReceipt.lead_id == lead.id,
             AutomationReceipt.id != receipt_id)
-            .order_by(AutomationReceipt.created_at.desc(), AutomationReceipt.id.desc()).limit(6))).scalars().all()
+        if settings.whatsapp_ai_test_mode and settings.whatsapp_ai_test_since:
+            history_query = history_query.where(AutomationReceipt.created_at >= settings.whatsapp_ai_test_since)
+        history = (await db.execute(history_query.order_by(
+            AutomationReceipt.created_at.desc(), AutomationReceipt.id.desc()).limit(6))).scalars().all()
         try:
             if used > settings.whatsapp_ai_daily_limit:
                 raise AIUnavailable()
-            previous = (await db.execute(select(LeadActivity).where(
+            qualification_query = select(LeadActivity).where(
                 LeadActivity.organization_id == org, LeadActivity.lead_id == lead.id,
                 LeadActivity.event_key.startswith('whatsapp-qualification:', autoescape=True))
-                .order_by(LeadActivity.created_at.desc(), LeadActivity.id.desc()).limit(1))).scalar_one_or_none()
+            if settings.whatsapp_ai_test_mode and settings.whatsapp_ai_test_since:
+                qualification_query = qualification_query.where(LeadActivity.created_at >= settings.whatsapp_ai_test_since)
+            previous = (await db.execute(qualification_query.order_by(
+                LeadActivity.created_at.desc(), LeadActivity.id.desc()).limit(1))).scalar_one_or_none()
             generated = await ai_answer(list(reversed(history)), text, previous.note if previous else '')
             if qualification_complete(generated):
                 generated.handoff = True
