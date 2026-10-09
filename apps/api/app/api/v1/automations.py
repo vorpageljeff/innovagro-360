@@ -65,16 +65,6 @@ async def create_rule(data: RuleInput, db: DB, auth: Auth):
 
 @router.post('/automations/simulate')
 async def simulate(data: SimulationInput, db: DB, auth: Auth):
-    previous_replies = (await db.execute(select(func.count(AutomationReceipt.id)).where(
-        AutomationReceipt.organization_id == org, AutomationReceipt.lead_id == lead.id,
-        AutomationReceipt.id != receipt_id, AutomationReceipt.reply != '',
-        AutomationReceipt.state.in_(['sent', 'sending', 'uncertain'])))).scalar_one()
-    if previous_replies >= settings.whatsapp_bot_max_replies:
-        lead.bot_paused = True
-        lead.priority = 'alta'
-        receipt.state = 'paused'
-        await db.commit()
-        return {'state': receipt.state}
     rules = (await db.execute(select(AutomationRule).where(AutomationRule.organization_id == auth.organization_id)
         .order_by(AutomationRule.position, AutomationRule.created_at, AutomationRule.id))).scalars().all()
     return rule_plan(matching_rule(rules, data.text))
