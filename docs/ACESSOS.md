@@ -1,5 +1,9 @@
 # Acessos — InnovAgro 360
 
+## Evolution: correção de ACK 463 — 09/10/2026
+
+Integração empresarial atualizada para imagem `voragon-evolution:2.3.7-baileys-rc14`, mantendo Evolution 2.3.7, sessão, volumes e credenciais. Acrescentar `deploy/compose.evolution-protocol.yml` como último override na recriação do serviço evolution; publicação atual usa os compose históricos de `releases/5a03d43/deploy`. API permanece f2a62f6 e frontend 4a55746. Teste pessoal recebeu DELIVERY_ACK após erro inicial, conferido novamente com conexão open. Nenhum reenvio comercial. Backup externo anterior 20261009T125336Z. Procedimento, rollback e limitação do acompanhamento de entrega em `EVOLUTION_ENVIO_463.md`.
+
 Verificados em 21/09/2026.
 
 - Dashboard: https://innovagro-360.vercel.app/dashboard

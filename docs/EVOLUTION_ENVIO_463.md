@@ -8,4 +8,8 @@ Atualização preparada em `deploy/Dockerfile.evolution`: base Evolution 2.3.7 f
 
 Rollback: recriar somente evolution com os compose anteriores, sem override de protocolo. Não apagar instâncias ou banco, nem desconectar a conta como tentativa de contornar a restrição. Histórico, dados e configuração de API/frontend permanecem preservados.
 
-Validação de entrega após atualização ainda pendente. Testar somente no número pessoal expressamente autorizado; não reenviar mensagens comerciais.
+Atualização aplicada a partir de `65e1d7c`, enviada ao remoto. Imagem ativa `voragon-evolution:2.3.7-baileys-rc14`, build digest `sha256:9831037e8f05640403b26d77ab045cb9987d9bc45bdb411f82fa1defc7ad0163`. Compose ativo da integração continua no diretório histórico `releases/5a03d43/deploy`, com o novo override como último arquivo. API permanece f2a62f6 e frontend 4a55746; nenhum novo deploy destas aplicações foi necessário.
+
+Teste pessoal autorizado código edc63c: mensagem 3EB0DA50F77B2E21D011A7 apresentou ERROR inicial seguido de DELIVERY_ACK. Segunda leitura confirmou a entrega e conexão open, sem novo envio. Isso confirma entrega deste teste; não comprova liberação de todos os destinatários nem corrige os registros comerciais anteriores. Nenhuma mensagem comercial foi reenviada.
+
+Limitação existente do CRM: estados sent/recorded não reconciliam os ACK posteriores de falha. A interface de lote explicita aceitação pela API, mas a conversa ainda não apresenta o ERROR do provedor. Correção desse acompanhamento permanece pendente, sem declarar entrega dos pedidos antigos. Preservar o override de protocolo nos próximos deployments da integração.
