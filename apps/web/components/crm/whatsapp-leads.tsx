@@ -143,6 +143,11 @@ export function WhatsAppLeads({ initialLeadId }: { initialLeadId?: string }) {
     }, 5000);
     return () => { abort.abort(); clearInterval(interval); };
   }, [composingId]);
+  useEffect(() => {
+    if (!composingId || messageLoading) return;
+    const frame = requestAnimationFrame(() => document.getElementById("message-title")?.scrollIntoView({ block: "start" }));
+    return () => cancelAnimationFrame(frame);
+  }, [composingId, messageLoading]);
   const messageCount = conversation?.messages.length;
   useEffect(() => { chatEnd.current?.scrollIntoView({ block: "nearest" }); }, [messageCount]);
   async function saveTemplate() {
