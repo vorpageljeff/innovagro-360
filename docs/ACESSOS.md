@@ -137,3 +137,9 @@ Site Voragon publicado READY `dpl_GoNHsRAHARFc73S71ELDtQmZBghQ`, com página `/c
 Jefferson autorizou usar o WhatsApp empresarial (45) 99103-8233 e ativar o bot nessa conta. Instância separada `crm360-business` criada; webhook configurado com segredo existente e evento MESSAGES_UPSERT. EVOLUTION_INSTANCE aponta para essa instância. API da release 73b32ba recriada. Instância pessoal crm360 preservada, sem ativar respostas nessa conta. Exclusões privadas do número pessoal preservadas.
 
 QR exibido ao titular; última consulta connecting, ownerJid vazio. EVOLUTION_BOT_ENABLED=false até verificar connectionStatus=open e ownerJid do empresarial (5545991038233 ou variante 554591038233). Depois dessa conferência, a autorização atual permite habilitar os fluxos existentes nesse número, sem pedir autorização novamente. WHATSAPP_AI_ENABLED=false; chave e modelo ausentes. Não declarar bot ativo ou envio testado enquanto vinculação não for confirmada. Nenhuma mensagem externa enviada pelo agente.
+
+### Bot empresarial ativado — 08/10/2026
+
+Titular escaneou QR e confirmou. Evolution crm360-business verificado open, ownerJid correspondente ao empresarial (variante brasileira sem nono dígito). EVOLUTION_BOT_ENABLED=true aplicado somente após essa conferência; API release 73b32ba recriada. Estado open, instância ativa empresarial, webhook habilitado MESSAGES_UPSERT e exclusão do número pessoal confirmados após recriação. Conexão pessoal preservada e sem bot. Autorização desta sessão substitui a pausa global anterior somente para a conta empresarial.
+
+Seis fluxos existentes ativos: boas-vindas/menu, serviços, orçamento, atendente, suporte e não contatar. WHATSAPP_AI_ENABLED=false; falta chave/modelo para IA. Nenhuma mensagem de teste foi enviada pelo agente; resposta real deve ser verificada por mensagem recebida de telefone não excluído. Leads com bot pausado ou encerrados continuam sem resposta automática.
