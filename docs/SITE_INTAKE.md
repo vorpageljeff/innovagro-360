@@ -1,0 +1,9 @@
+# Cadastro recebido do site Voragon
+
+Conversa guiada coleta nome, empresa opcional, e-mail, telefone brasileiro com DDD, cidade, estado/país, interesse, objetivo, situação atual opcional e momento. O visitante revisa e autoriza antes de enviar. POST /api/v1/public/site-leads é público e apenas grava; não retorna dados de contatos. Organização fixada pela configuração do servidor, sem aceitar tenant informado pelo visitante. Origem de navegador permitida: https://voragon.vercel.app; CORS não constitui autenticação e ferramentas externas podem simular Origin.
+
+Cadastro no banco existente, sem migração: telefone no lead; e-mail e resumo completo no histórico em nota com origem site. Não inventa Instagram. Novo lead responde a uma solicitação recebida, sem agendar follow-up de prospecção, bot pausado, prioridade alta se deseja orçamento imediato. Leads existentes por telefone normalizado/variante brasileira recebem nota sem substituir histórico, nome ou situação encerrada. Chave de envio UUID evita duplicação em tentativas da mesma solicitação; uso da mesma chave com dados diferentes é rejeitado. Lock transacional por organização serializa cadastros; índices existentes preservam unicidade.
+
+Proteções: limites de campos, validação de e-mail/telefone, autorização obrigatória, honeypot, limite global de 100 solicitações por hora e três por contato/hora. Isso limita volume; não substitui CAPTCHA nem verifica a titularidade do telefone/e-mail. API não envia mensagens nem chama IA. Pausas globais e exclusões de envios permanecem inalteradas.
+
+WhatsApp é caminho opcional independente, com mensagem preparada e confirmação no aplicativo. Falha de cadastro aparece ao visitante e permite repetir a mesma chave ou continuar no WhatsApp. A página não declara recebido sem resposta positiva da API. Nenhuma inscrição automática em marketing.

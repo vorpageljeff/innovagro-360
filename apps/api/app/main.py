@@ -5,7 +5,7 @@ from app.api.v1.router import api_router
 from app.core.config import settings
 
 app = FastAPI(title="InnovAgro 360 API", version="0.1.0", docs_url="/docs" if settings.app_env != "production" else None)
-app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_credentials=True, allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type", "X-Request-ID"])
+app.add_middleware(CORSMiddleware, allow_origins=list(dict.fromkeys([*settings.cors_origins, "https://voragon.vercel.app"])), allow_credentials=True, allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type", "X-Request-ID"])
 
 @app.middleware("http")
 async def request_id_middleware(request: Request, call_next):

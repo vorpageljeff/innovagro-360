@@ -15,3 +15,6 @@ api_router.include_router(whatsapp_dashboard_router)
 
 from app.api.v1.whatsapp_leads import router as whatsapp_leads_router
 api_router.include_router(whatsapp_leads_router)
+
+from app.api.v1.site_intake import router as site_intake_router
+api_router.include_router(site_intake_router)
