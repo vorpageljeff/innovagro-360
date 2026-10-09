@@ -17,3 +17,15 @@ API autenticada sob `/api/v1/crm/evolution`: `GET/POST /message-template`, `GET/
 Atualização 09/10/2026: backend `29694dd`, frontend `ae927df`, migração aditiva `20261009_0005`. Backup externo anterior à migração disponível na configuração privada. Validação: 87 testes API, compilação Next.js, banco restaurado isolado com os 10 leads preservados, persistência de rascunhos, registro de contato, duplicidade e resultado incerto. Evolution substituído por fixture nos testes de envio; nenhuma mensagem comercial enviada durante a validação.
 
 Verificação no navegador: leitura real das conversas pelo Evolution, rascunho salvo e relido no servidor, botão de envio com requisição interceptada (sem disparo), modal em tela de 390 px e ausência de erros JavaScript.
+
+## Caixa de entrada e alertas — 09/10/2026
+
+A tela WhatsApp agora abre na aba Leads para contato. Conversas ficam à esquerda e o chat com composer à direita. Em celular, selecionar o contato abre o chat; Voltar à lista retorna aos contatos. Campos de envio, rascunhos, mensagem padrão, edição de telefone e assumir atendimento continuam disponíveis.
+
+O contador é de mensagens de texto recebidas pelo webhook e registradas no CRM, independentemente de a IA responder. Leituras persistem por usuário/organização no banco. O cliente envia apenas IDs dos recibos que correspondem às mensagens exibidas no histórico, após abrir a conversa com a página visível. Não usa a leitura do aplicativo WhatsApp como leitura do operador CRM. Reabrir/recarregar preserva leituras; mensagens chegadas posteriormente e mensagens de outras conversas continuam não lidas. Marcar leitura não pausa o bot e não envia mensagem ao cliente.
+
+Menu WhatsApp, sino e título da aba mostram o total global. Lista mostra contador por contato, prévia da resposta e destaque de seleção; contatos não lidos têm preferência dentro da página atual. Filtros e paginação continuam disponíveis. A lista e os contadores são consultados a cada 10 segundos, e o histórico aberto a cada 5 segundos. Alertas funcionam enquanto o CRM está aberto; não há push do sistema operacional com o navegador fechado. Mídias aparecem no histórico Evolution como indicação textual, mas não entram no contador baseado em recibos de texto do CRM.
+
+API: GET /api/v1/crm/evolution/inbox retorna totais e contadores por lead; POST /leads/{id}/read aceita até 100 receipt_ids validados contra lead/organização autenticados. Nenhum user_id pode ser informado pelo cliente. Repetir a leitura é idempotente. GET /conversation inclui lead_id e read_ids dos recibos visíveis.
+
+Backend 1bab60c e migração aditiva 20261009_0006. Backup crm-before-inbox-20261009.dump copiado para armazenamento privado fora da VPS. Teste PostgreSQL em restauração isolada confirmou persistência, isolamento de leitura por usuário, leitura somente de mensagens exibidas, mensagem posterior não lida e repetição idempotente. Dez leads e dez envios anteriores preservados. 90 testes API aprovados; nenhuma mensagem WhatsApp enviada durante esta atualização.

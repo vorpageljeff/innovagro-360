@@ -185,3 +185,9 @@ Backup completo anterior crm-before-prospects-20261009.dump copiado para diretó
 ## Chat empresarial no CRM — 09/10/2026
 
 Em https://innovagro-360.vercel.app/whatsapp, abrir Leads para contato → Abrir conversa. Backend release `29694dd`, imagem `voragon-crm-api:chat-29694dd`, esquema `20261009_0005`. Frontend commit `ae927df`, deployment `dpl_81J81Bez3yUE8rVJQYW39b1AgESS`. Rascunhos e mensagem padrão persistem no banco; histórico consultado no Evolution e envio individual com prevenção de duplicidade. Ver `WHATSAPP_LEADS.md`. Não foram disparadas mensagens comerciais nos testes.
+
+## Caixa de entrada com não lidas — 09/10/2026
+
+Backend `1bab60c`, imagem `voragon-crm-api:inbox-1bab60c`, schema `20261009_0006`; backup externo anterior `crm-before-inbox-20261009.dump`, restaurado em banco isolado para validar a migração. Dez leads e dez envios reais anteriores preservados. Frontend `a4ff0a9`, produção Vercel `dpl_5uBiyBQ76ugFML5j2GTm3DK3ExBT` em https://innovagro-360.vercel.app/whatsapp. A aba Leads para contato é aberta inicialmente, com contatos à esquerda, chat à direita e composer mantido. Contador por lead, menu WhatsApp, sino e título da aba; leitura persistida por usuário. Detalhes e limites em WHATSAPP_LEADS.md.
+
+Validação: 90 testes API, build Next.js de fonte versionada isolada, PostgreSQL restaurado com leitura idempotente/por usuário/recibo visível/mensagem posterior, navegador com contadores de teste interceptados e API real de inbox, envio de UI interceptado, desktop e 390 px sem erro JavaScript. Nenhuma mensagem real durante essa entrega. Os dez envios comerciais autorizados anteriormente permanecem no banco; não foram repetidos.
