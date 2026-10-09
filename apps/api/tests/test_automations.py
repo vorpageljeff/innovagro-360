@@ -132,3 +132,16 @@ def test_stop_keyword_does_not_match_preparar():
     from app.services.bot_templates import commercial_templates
     rules = [SimpleNamespace(**data) for data in commercial_templates()]
     assert matching_rule(rules, 'Quero preparar um site').name == 'Conhecer serviços'
+
+
+def test_budget_continues_ai_but_human_and_terminal_rules_do_not():
+    from types import SimpleNamespace
+    from app.services.evolution import ai_may_handle_rule
+    def rule(contains, status=None):
+        return SimpleNamespace(contains=contains, status=status, handoff=True)
+    assert ai_may_handle_rule(rule('1|orçamento|preço|valor'))
+    assert not ai_may_handle_rule(rule('atendente|humano'))
+    assert not ai_may_handle_rule(rule('suporte|erro'))
+    assert not ai_may_handle_rule(rule('orcamento|humano'))
+    assert not ai_may_handle_rule(rule('orcamento', 'sem_interesse'))
+    assert not ai_may_handle_rule(rule(''))

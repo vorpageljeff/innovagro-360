@@ -9,7 +9,7 @@ from app.api.v1.crm import get_lead
 from app.core.config import settings
 from app.models.crm import Lead, LeadActivity, AutomationRule, AutomationReceipt
 from app.schemas.crm import RuleInput, RuleOutput, ReceiptOutput, SimulationInput
-from app.services.evolution import configured, evolution_request, incoming_message, matching_rule, rule_plan
+from app.services.evolution import configured, evolution_request, incoming_message, matching_rule, rule_plan, ai_may_handle_rule
 from app.services.whatsapp_ai import AIUnavailable, answer as ai_answer, readiness, qualification_complete, qualification_note, site_intake, test_contact_allowed
 from app.services.whatsapp_leads import excluded_phones
 
@@ -148,9 +148,8 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
     rules = (await db.execute(select(AutomationRule).where(AutomationRule.organization_id == org,
         AutomationRule.enabled.is_(True)).order_by(AutomationRule.position, AutomationRule.created_at, AutomationRule.id))).scalars().all()
     rule = matching_rule(rules, text)
-    # Explicit human/terminal flows always take precedence over AI.
-    if settings.whatsapp_ai_enabled and test_contact_allowed(phone) and (rule is None or
-            not rule.handoff and rule.status not in ('sem_interesse', 'convertido')):
+    # Budget intent continues qualification; explicit human/terminal flows take precedence.
+    if settings.whatsapp_ai_enabled and test_contact_allowed(phone) and ai_may_handle_rule(rule):
         receipt.state = 'ai_generating'
         # Reserve before the paid call; repeated webhooks must not generate twice.
         await db.commit()
@@ -185,7 +184,7 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
             generated = await ai_answer(list(reversed(history)), text, previous.note if previous else '')
             if qualification_complete(generated):
                 generated.handoff = True
-                generated.reply = 'Obrigado pelas informações! Vou encaminhar sua necessidade para nossa equipe continuar o atendimento.'
+                generated.reply = 'Obrigado pelas informações! Já encaminhei seu pedido para o Jefferson. Um atendente vai continuar a conversa por aqui; pode deixar mais detalhes enquanto aguarda.'
                 if generated.priority == 'baixa' or generated.priority == 'media':
                     generated.priority = 'alta'
             if any((generated.name, generated.company, generated.service, generated.need, generated.summary)):

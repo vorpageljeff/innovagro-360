@@ -77,3 +77,15 @@ def rule_plan(rule):
     return {'matched': True, 'name': rule.name, 'priority': rule.priority,
             'status': status, 'handoff': getattr(rule, 'handoff', False),
             'reply': rule.reply if status not in ('sem_interesse', 'convertido') else ''}
+
+
+def ai_may_handle_rule(rule):
+    if rule is None:
+        return True
+    if rule.status in ('sem_interesse', 'convertido'):
+        return False
+    if not rule.handoff:
+        return True
+    # Budget requests need qualification; explicit human/support rules still pause.
+    terms = {normalize_text(term) for term in rule.contains.split('|') if term.strip()}
+    return bool(terms) and terms <= {'1', 'orcamento', 'preco', 'valor'}
