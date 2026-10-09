@@ -18,3 +18,10 @@ class WhatsAppOutbound(UUIDPrimaryKey, TimestampMixin, TenantMixin, Base):
     phone: Mapped[str] = mapped_column(String(16))
     text: Mapped[str] = mapped_column(Text)
     state: Mapped[str] = mapped_column(String(20))
+
+class WhatsAppRead(UUIDPrimaryKey, TimestampMixin, TenantMixin, Base):
+    __tablename__ = 'crm_whatsapp_reads'
+    __table_args__ = (UniqueConstraint('organization_id', 'user_id', 'receipt_id', name='uq_whatsapp_read_user_receipt'),)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey('users.id', ondelete='RESTRICT'))
+    lead_id: Mapped[UUID] = mapped_column(ForeignKey('crm_leads.id', ondelete='RESTRICT'), index=True)
+    receipt_id: Mapped[UUID] = mapped_column(ForeignKey('crm_automation_receipts.id', ondelete='RESTRICT'))

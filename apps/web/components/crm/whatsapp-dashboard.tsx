@@ -32,7 +32,7 @@ async function api(path: string, signal?: AbortSignal, body?: unknown) {
 
 export function WhatsAppDashboard() {
   const [days, setDays] = useState(7);
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState("leads");
   const [data, setData] = useState<Dashboard | null>(null);
   const [connection, setConnection] = useState<Connection | null>(null);
   const [error, setError] = useState("");

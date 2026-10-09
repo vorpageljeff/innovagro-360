@@ -140,4 +140,50 @@ async def conversation(lead_id: UUID, db: DB, auth: Auth):
     for r in outbox:
         if source=='crm' or r.state!='sent':messages.append({'id':str(r.id),'direction':'outgoing','text':r.text,'at':r.created_at,'state':r.state})
     messages.sort(key=lambda m:(m['at'],m['id']))
-    return {'messages':messages[-100:],'bot_paused':paused,'status':status,'source':source,'warning':warning}
+    visible=messages[-100:]
+    visible_ids={m['id'] for m in visible if m['direction']=='incoming'}
+    receipts=(await db.execute(select(AutomationReceipt).where(AutomationReceipt.organization_id==auth.organization_id,
+        AutomationReceipt.lead_id==lead.id).order_by(AutomationReceipt.created_at.desc()).limit(100))).scalars().all()
+    read_ids=[r.id for r in receipts if r.message_id in visible_ids or str(r.id)+':in' in visible_ids]
+    return {'lead_id':lead.id,'messages':visible,'read_ids':read_ids,'bot_paused':paused,'status':status,'source':source,'warning':warning}
+
+class ReadInput(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    receipt_ids: list[UUID] = Field(max_length=100)
+
+@router.post('/leads/{lead_id}/read')
+async def mark_read(lead_id: UUID, data: ReadInput, db: DB, auth: Auth):
+    from app.models.crm import AutomationReceipt
+    from app.models.whatsapp_messages import WhatsAppRead
+    owns_integration(auth)
+    await get_lead(db, auth.organization_id, lead_id)
+    ids=(await db.execute(select(AutomationReceipt.id).where(
+        AutomationReceipt.organization_id==auth.organization_id,
+        AutomationReceipt.lead_id==lead_id, AutomationReceipt.id.in_(data.receipt_ids)))).scalars().all()
+    for receipt_id in ids:
+        await db.execute(insert(WhatsAppRead).values(id=uuid5(auth.user.id,str(receipt_id)),
+            organization_id=auth.organization_id,user_id=auth.user.id,lead_id=lead_id,receipt_id=receipt_id)
+            .on_conflict_do_nothing(constraint='uq_whatsapp_read_user_receipt'))
+    await db.commit()
+    return {'read':len(ids)}
+
+@router.get('/inbox')
+async def inbox(db: DB, auth: Auth):
+    from sqlalchemy import func, and_
+    from app.models.crm import AutomationReceipt
+    from app.models.whatsapp_messages import WhatsAppRead
+    owns_integration(auth)
+    org=auth.organization_id
+    unread=(select(AutomationReceipt.lead_id,func.count(AutomationReceipt.id).label('n'))
+        .outerjoin(WhatsAppRead,and_(WhatsAppRead.receipt_id==AutomationReceipt.id,
+            WhatsAppRead.organization_id==org,WhatsAppRead.user_id==auth.user.id))
+        .where(AutomationReceipt.organization_id==org,WhatsAppRead.id.is_(None))
+        .group_by(AutomationReceipt.lead_id).subquery())
+    incoming=(select(AutomationReceipt.incoming).where(AutomationReceipt.organization_id==org,
+        AutomationReceipt.lead_id==Lead.id).order_by(AutomationReceipt.created_at.desc(),AutomationReceipt.id.desc()).limit(1).correlate(Lead).scalar_subquery())
+    at=(select(AutomationReceipt.created_at).where(AutomationReceipt.organization_id==org,
+        AutomationReceipt.lead_id==Lead.id).order_by(AutomationReceipt.created_at.desc(),AutomationReceipt.id.desc()).limit(1).correlate(Lead).scalar_subquery())
+    rows=(await db.execute(select(Lead.id,func.coalesce(unread.c.n,0),incoming,at)
+        .outerjoin(unread,unread.c.lead_id==Lead.id).where(Lead.organization_id==org))).all()
+    items=[{'lead_id':id,'unread':n,'last_incoming':text,'last_incoming_at':time} for id,n,text,time in rows]
+    return {'items':items,'unread':sum(i['unread'] for i in items),'unread_contacts':sum(i['unread']>0 for i in items)}

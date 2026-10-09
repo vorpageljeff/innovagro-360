@@ -61,3 +61,21 @@ def test_blocked_contacts_cannot_send(monkeypatch,status,phone):
     monkeypatch.setattr(api,'evolution_request',fail)
     with pytest.raises(HTTPException) as error:asyncio.run(api.send(lead_id,api.SendInput(text='Olá',request_id=uuid4(),expected_phone='5511999999999'),DB(),SimpleNamespace(organization_id=org)))
     assert error.value.status_code==409
+
+
+def test_inbox_and_read_require_authentication():
+    with TestClient(app) as client:
+        assert client.get('/api/v1/crm/evolution/inbox').status_code == 401
+        assert client.post(f'/api/v1/crm/evolution/leads/{uuid4()}/read', json={'receipt_ids':[]}).status_code == 401
+
+
+def test_read_acknowledgment_is_bounded():
+    with pytest.raises(ValidationError): api.ReadInput(receipt_ids=[uuid4() for _ in range(101)])
+    with pytest.raises(ValidationError): api.ReadInput(receipt_ids=[],user_id=str(uuid4()))
+
+
+def test_foreign_organization_cannot_read_inbox(monkeypatch):
+    monkeypatch.setattr(settings,'evolution_organization_id',str(uuid4()))
+    with pytest.raises(HTTPException) as e:
+        asyncio.run(api.inbox(None,SimpleNamespace(organization_id=uuid4())))
+    assert e.value.status_code==404
