@@ -13,6 +13,7 @@ from app.models.whatsapp_messages import WhatsAppDraft, WhatsAppOutbound
 from app.services.evolution import configured, evolution_request
 from app.services.whatsapp_leads import blocked_reason
 from app.services.crm import apply_activity
+from app.schemas.crm import ActivityInput
 
 router = APIRouter(prefix='/crm/evolution', tags=['Envio WhatsApp'])
 DEFAULT_MESSAGE = 'Olá, equipe da {empresa}! Sou Jefferson, da Voragon. Encontrei a empresa de vocês e gostaria de conversar sobre uma página profissional para apresentar seus serviços e facilitar novos contatos pela internet. Posso explicar a ideia?'
@@ -95,7 +96,7 @@ async def send(lead_id: UUID, data: DraftInput, db: DB, auth: Auth):
         await evolution_request('POST','message/sendText',{'number':phone,'text':data.text})
         row.state='sent';activity.kind='contato';activity.note='Mensagem enviada pelo WhatsApp empresarial:\n'+data.text
         lead=await get_lead(db,org,lead.id)
-        apply_activity(lead,activity)
+        apply_activity(lead,ActivityInput(kind='contato',occurred_on=activity.occurred_on,event_key=activity.event_key,note=activity.note))
     except HTTPException:
         row.state='uncertain';activity.note='Envio sem confirmação. Verifique no WhatsApp empresarial antes de tentar novamente:\n'+data.text
     await db.commit()
