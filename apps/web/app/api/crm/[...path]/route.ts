@@ -8,7 +8,7 @@ const error = (message: string, status: number) => NextResponse.json({ message }
 async function handle(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
   const route = path.join("/");
-  if (!/^(session|import|leads(?:\/[0-9a-f-]{36}\/(?:activities|settings|messages))?|automations(?:\/(?:[0-9a-f-]{36}|simulate))?|evolution\/(?:status|connect|dashboard|leads|ai\/status))$/.test(route)) return error("Recurso não encontrado.", 404);
+  if (!/^(session|import|leads(?:\/[0-9a-f-]{36}\/(?:activities|settings|messages))?|automations(?:\/(?:[0-9a-f-]{36}|simulate))?|evolution\/(?:status|connect|dashboard|leads(?:\/[0-9a-f-]{36}\/(?:draft|send|conversation))?|message-template|ai\/status))$/.test(route)) return error("Recurso não encontrado.", 404);
   if (request.method === "POST" && request.headers.get("origin") !== request.nextUrl.origin) return error("Origem inválida.", 403);
   const base = process.env.CRM_API_URL?.replace(/\/$/, "");
   if (!base) return error("O CRM ainda não está conectado ao servidor. Nenhum dado será salvo neste navegador.", 503);

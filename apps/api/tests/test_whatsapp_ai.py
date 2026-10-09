@@ -95,7 +95,7 @@ def test_ai_webhook_preserves_pause_deduplication_handoff_and_tenant(monkeypatch
             if self.calls == 4: return SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: [rule]))
             if self.calls == 5: return SimpleNamespace(scalar_one=lambda: lead)
             if self.calls == 6: return SimpleNamespace(scalar_one=lambda: 101 if mode == 'limit' else 1)
-            if self.calls == 8: return SimpleNamespace(scalar_one_or_none=lambda: None)
+            if self.calls in (8, 9): return SimpleNamespace(scalar_one_or_none=lambda: None)
             return SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: []))
         async def commit(self): self.commits += 1
         async def refresh(self, obj): pass

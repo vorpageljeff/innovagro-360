@@ -7,6 +7,8 @@ from sqlalchemy.dialects.postgresql import insert
 from app.api.dependencies import Auth, DB
 from app.api.v1.crm import get_lead
 from app.core.config import settings
+from types import SimpleNamespace
+from app.models.whatsapp_messages import WhatsAppOutbound
 from app.models.crm import Lead, LeadActivity, AutomationRule, AutomationReceipt
 from app.schemas.crm import RuleInput, RuleOutput, ReceiptOutput, SimulationInput
 from app.services.evolution import configured, evolution_request, incoming_message, matching_rule, rule_plan, ai_may_handle_rule
@@ -201,7 +203,13 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
                 qualification_query = qualification_query.where(LeadActivity.created_at >= settings.whatsapp_ai_test_since)
             previous = (await db.execute(qualification_query.order_by(
                 LeadActivity.created_at.desc(), LeadActivity.id.desc()).limit(1))).scalar_one_or_none()
-            generated = await ai_answer(list(reversed(history)), text, previous.note if previous else '')
+            manual = (await db.execute(select(WhatsAppOutbound).where(
+                WhatsAppOutbound.organization_id == org, WhatsAppOutbound.lead_id == lead.id,
+                WhatsAppOutbound.state == 'sent').order_by(WhatsAppOutbound.created_at.desc()).limit(1))).scalar_one_or_none()
+            context = list(reversed(history))
+            if manual:
+                context.insert(0, SimpleNamespace(incoming='', reply='Mensagem enviada manualmente pelo Jefferson: ' + manual.text, state='sent'))
+            generated = await ai_answer(context, text, previous.note if previous else '')
             if qualification_complete(generated):
                 generated.handoff = True
                 generated.reply = 'Obrigado pelas informações! Já encaminhei seu pedido para o Jefferson. Um atendente vai continuar a conversa por aqui; pode deixar mais detalhes enquanto aguarda.'

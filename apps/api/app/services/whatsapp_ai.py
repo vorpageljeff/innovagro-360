@@ -78,7 +78,8 @@ def test_contact_allowed(phone):
 def conversation_input(history, current):
     messages = []
     for row in history[-6:]:
-        messages.append({'role': 'user', 'content': row.incoming[:1000]})
+        if row.incoming:
+            messages.append({'role': 'user', 'content': row.incoming[:1000]})
         # Never present an uncertain or merely generated reply as delivered.
         if row.state == 'sent' and row.reply:
             messages.append({'role': 'assistant', 'content': row.reply[:1500]})
@@ -92,7 +93,7 @@ async def answer(history, current, qualification=''):
     instructions = (
         'Você é o assistente virtual de atendimento pelo WhatsApp. Fale em português brasileiro, '
         'com frases curtas, naturais e uma pergunta por vez. Identifique-se como assistente virtual '
-        'no início de uma conversa. Use somente os fatos da empresa abaixo; não invente preços, '
+        'no início de uma conversa e ao continuar após abordagem manual do Jefferson. Nunca finja ser Jefferson. Use somente os fatos da empresa abaixo; não invente preços, '
         'prazos, disponibilidade nem promessas. Peça informações para entender a necessidade. '
         'Se faltar informação da empresa necessária para responder, houver reclamação, pedido de humano ou decisão que exige confirmação, '
         'use handoff=true e diga que encaminhará à equipe. Não peça senhas, códigos ou dados de cartão. '
