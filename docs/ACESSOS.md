@@ -131,3 +131,9 @@ API publicada a partir de `73b32ba7573a288347553eee5eb10fa80dd0044b`, confirmada
 70 testes da API passaram. Backup anterior `crm-20261009T012345Z.dump` (nome UTC; realizado em 08/10 no horário de São Paulo) copiado para diretório privado externo. Restauração em banco temporário confirmou contato persistente em nova sessão, notas completas, idempotência, deduplicação de variante de telefone, conflito de chave e limite por contato; banco temporário removido. Nenhum lead fictício gravado na produção. API pública verificou health 200, preflight 200 e rejeição de dados incompletos 422. Bot e IA continuam desabilitados; nenhuma mensagem enviada.
 
 Site Voragon publicado READY `dpl_GoNHsRAHARFc73S71ELDtQmZBghQ`, com página `/conversar`, e-mail/telefone, autorização e envio explícito ao CRM. WhatsApp opcional. Nenhuma alteração ou publicação do frontend do CRM necessária. Dados do contato aparecem no histórico de atendimento.
+
+## Número empresarial para bot — 08/10/2026 (vinculação pendente)
+
+Jefferson autorizou usar o WhatsApp empresarial (45) 99103-8233 e ativar o bot nessa conta. Instância separada `crm360-business` criada; webhook configurado com segredo existente e evento MESSAGES_UPSERT. EVOLUTION_INSTANCE aponta para essa instância. API da release 73b32ba recriada. Instância pessoal crm360 preservada, sem ativar respostas nessa conta. Exclusões privadas do número pessoal preservadas.
+
+QR exibido ao titular; última consulta connecting, ownerJid vazio. EVOLUTION_BOT_ENABLED=false até verificar connectionStatus=open e ownerJid do empresarial (5545991038233 ou variante 554591038233). Depois dessa conferência, a autorização atual permite habilitar os fluxos existentes nesse número, sem pedir autorização novamente. WHATSAPP_AI_ENABLED=false; chave e modelo ausentes. Não declarar bot ativo ou envio testado enquanto vinculação não for confirmada. Nenhuma mensagem externa enviada pelo agente.
