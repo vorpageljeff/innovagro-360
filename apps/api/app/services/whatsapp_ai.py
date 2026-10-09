@@ -164,3 +164,14 @@ async def answer(history, current, qualification=''):
     except (httpx.HTTPError, ValueError, TypeError, AttributeError, ValidationError):
         # Never expose provider bodies or credentials to logs/the WhatsApp client.
         raise AIUnavailable() from None
+
+
+HANDOFF_REPLY = 'Já encaminhei sua conversa para o Jefferson. Um atendente vai continuar por aqui; pode deixar mais detalhes enquanto aguarda.'
+
+def limit_reply(result, previous_replies):
+    if previous_replies + 1 >= settings.whatsapp_bot_max_replies:
+        if not result.handoff:
+            result.reply = result.reply[:1200].rstrip() + '\n\n' + HANDOFF_REPLY
+        result.handoff = True
+        result.priority = 'alta'
+    return result

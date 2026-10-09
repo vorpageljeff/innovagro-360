@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.models.crm import Lead, LeadActivity, AutomationRule, AutomationReceipt
 from app.schemas.crm import RuleInput, RuleOutput, ReceiptOutput, SimulationInput
 from app.services.evolution import configured, evolution_request, incoming_message, matching_rule, rule_plan, ai_may_handle_rule
-from app.services.whatsapp_ai import AIUnavailable, answer as ai_answer, readiness, qualification_complete, qualification_note, site_intake, test_contact_allowed
+from app.services.whatsapp_ai import AIUnavailable, answer as ai_answer, readiness, qualification_complete, qualification_note, site_intake, test_contact_allowed, Answer, HANDOFF_REPLY, limit_reply
 from app.services.whatsapp_leads import excluded_phones
 
 router = APIRouter(prefix='/crm', tags=['Automações'])
@@ -65,6 +65,16 @@ async def create_rule(data: RuleInput, db: DB, auth: Auth):
 
 @router.post('/automations/simulate')
 async def simulate(data: SimulationInput, db: DB, auth: Auth):
+    previous_replies = (await db.execute(select(func.count(AutomationReceipt.id)).where(
+        AutomationReceipt.organization_id == org, AutomationReceipt.lead_id == lead.id,
+        AutomationReceipt.id != receipt_id, AutomationReceipt.reply != '',
+        AutomationReceipt.state.in_(['sent', 'sending', 'uncertain'])))).scalar_one()
+    if previous_replies >= settings.whatsapp_bot_max_replies:
+        lead.bot_paused = True
+        lead.priority = 'alta'
+        receipt.state = 'paused'
+        await db.commit()
+        return {'state': receipt.state}
     rules = (await db.execute(select(AutomationRule).where(AutomationRule.organization_id == auth.organization_id)
         .order_by(AutomationRule.position, AutomationRule.created_at, AutomationRule.id))).scalars().all()
     return rule_plan(matching_rule(rules, data.text))
@@ -145,6 +155,16 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
         receipt.state = 'unmatched' if lead is None else 'paused'
         await db.commit()
         return {'state': receipt.state}
+    previous_replies = (await db.execute(select(func.count(AutomationReceipt.id)).where(
+        AutomationReceipt.organization_id == org, AutomationReceipt.lead_id == lead.id,
+        AutomationReceipt.id != receipt_id, AutomationReceipt.reply != '',
+        AutomationReceipt.state.in_(['sent', 'sending', 'uncertain'])))).scalar_one()
+    if previous_replies >= settings.whatsapp_bot_max_replies:
+        lead.bot_paused = True
+        lead.priority = 'alta'
+        receipt.state = 'paused'
+        await db.commit()
+        return {'state': receipt.state}
     rules = (await db.execute(select(AutomationRule).where(AutomationRule.organization_id == org,
         AutomationRule.enabled.is_(True)).order_by(AutomationRule.position, AutomationRule.created_at, AutomationRule.id))).scalars().all()
     rule = matching_rule(rules, text)
@@ -156,6 +176,16 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
         lead = (await db.execute(select(Lead).where(Lead.id == lead.id, Lead.organization_id == org)
             .with_for_update().execution_options(populate_existing=True))).scalar_one()
         if lead.bot_paused or lead.status in ('sem_interesse', 'convertido') or not settings.evolution_bot_enabled:
+            receipt.state = 'paused'
+            await db.commit()
+            return {'state': receipt.state}
+        previous_replies = (await db.execute(select(func.count(AutomationReceipt.id)).where(
+            AutomationReceipt.organization_id == org, AutomationReceipt.lead_id == lead.id,
+            AutomationReceipt.id != receipt_id, AutomationReceipt.reply != '',
+            AutomationReceipt.state.in_(['sent', 'sending', 'uncertain'])))).scalar_one()
+        if previous_replies >= settings.whatsapp_bot_max_replies:
+            lead.bot_paused = True
+            lead.priority = 'alta'
             receipt.state = 'paused'
             await db.commit()
             return {'state': receipt.state}
@@ -187,6 +217,7 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
                 generated.reply = 'Obrigado pelas informações! Já encaminhei seu pedido para o Jefferson. Um atendente vai continuar a conversa por aqui; pode deixar mais detalhes enquanto aguarda.'
                 if generated.priority == 'baixa' or generated.priority == 'media':
                     generated.priority = 'alta'
+            generated = limit_reply(generated, previous_replies)
             if any((generated.name, generated.company, generated.service, generated.need, generated.summary)):
                 from zoneinfo import ZoneInfo
                 db.add(LeadActivity(organization_id=org, lead_id=lead.id,
@@ -203,9 +234,8 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
             lead.priority = 'alta'
             lead.status = 'respondeu'
             lead.next_contact_on = None
-            receipt.state = 'ai_handoff'
-            await db.commit()
-            return {'state': receipt.state}
+            generated = Answer(reply=HANDOFF_REPLY, handoff=True, priority='alta')
+            receipt.reply = generated.reply
         receipt.state = 'sending'
         await db.commit()
         await db.refresh(lead)
@@ -231,6 +261,11 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
     lead.bot_paused = rule.handoff
     plan = rule_plan(rule)
     receipt.reply = plan['reply']
+    if receipt.reply and previous_replies + 1 >= settings.whatsapp_bot_max_replies:
+        if not rule.handoff:
+            receipt.reply = receipt.reply[:1200].rstrip() + '\n\n' + HANDOFF_REPLY
+        lead.bot_paused = True
+        lead.priority = 'alta'
     receipt.state = 'sending' if receipt.reply else 'completed'
     # Persist BEFORE external send. Duplicate delivery must never send twice.
     await db.commit()

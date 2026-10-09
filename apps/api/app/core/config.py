@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     whatsapp_ai_enabled: bool = False
     whatsapp_ai_model: str = ''
     whatsapp_ai_knowledge: str = Field(default='', max_length=8000)
+    whatsapp_bot_max_replies: int = Field(default=3, ge=1, le=20)
     whatsapp_ai_daily_limit: int = Field(default=100, ge=1, le=1000)
     whatsapp_ai_required_fields: str = 'name,service,need'
     access_token_minutes: int = 15

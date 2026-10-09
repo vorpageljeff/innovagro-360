@@ -70,6 +70,9 @@ def test_webhook_deduplication_and_terminal_contacts(monkeypatch, duplicate, ter
         calls = 0
         commits = 0
         async def execute(self, query):
+            if 'count(' in str(query):
+                assert org in query.compile().params.values()
+                return SimpleNamespace(scalar_one=lambda: 0)
             self.calls += 1
             values = query.compile().params
             if self.calls == 1:

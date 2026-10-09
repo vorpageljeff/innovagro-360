@@ -60,8 +60,8 @@ def test_disabled_ai_never_calls_provider(monkeypatch):
 
 
 @pytest.mark.parametrize('mode, expected, generations, sends', [
-    ('reply', 'sent', 1, 1), ('failure', 'ai_handoff', 1, 0),
-    ('limit', 'ai_handoff', 0, 0), ('paused', 'paused', 0, 0),
+    ('reply', 'sent', 1, 1), ('third', 'sent', 1, 1), ('cap', 'paused', 0, 0), ('failure', 'sent', 1, 1),
+    ('limit', 'sent', 0, 1), ('paused', 'paused', 0, 0),
     ('duplicate', 'duplicate', 0, 0), ('human', 'sent', 0, 1), ('excluded', 'paused', 0, 0), ('qualified', 'sent', 1, 1), ('site_paused', 'completed', 0, 0),
 ])
 def test_ai_webhook_preserves_pause_deduplication_handoff_and_tenant(monkeypatch, mode, expected, generations, sends):
@@ -82,6 +82,9 @@ def test_ai_webhook_preserves_pause_deduplication_handoff_and_tenant(monkeypatch
         notes = []
         def add(self, note): self.notes.append(note)
         async def execute(self, query):
+            if 'count(' in str(query) and 'reply_1' in query.compile().params:
+                assert org in query.compile().params.values()
+                return SimpleNamespace(scalar_one=lambda: 2 if mode == 'third' else 3 if mode == 'cap' else 0)
             self.calls += 1
             values = query.compile().params
             if self.calls != 3:
@@ -117,7 +120,7 @@ def test_ai_webhook_preserves_pause_deduplication_handoff_and_tenant(monkeypatch
                 'message': {'conversation': ('Olá! Vim pelo site da Voragon e quero conversar sobre meu projeto.\nNome: João\nServiço: Site\nNecessidade: Apresentar serviços' if mode == 'site_paused' else 'Olá')}}}).encode()
     assert asyncio.run(module.webhook(Request(), db, 'secret'))['state'] == expected
     assert calls == {'ai': generations, 'send': sends}
-    if mode in ('failure', 'limit', 'qualified', 'site_paused'): assert lead.bot_paused is True
+    if mode in ('failure', 'limit', 'qualified', 'site_paused', 'third', 'cap'): assert lead.bot_paused is True
     if mode in ('qualified', 'site_paused'):
         assert lead.priority == 'alta' and len(db.notes) == 1
         assert db.notes[0].organization_id == org and db.notes[0].lead_id == lead_id
@@ -148,3 +151,15 @@ def test_site_intake_parses_only_explicit_fields_and_preserves_multiline_need():
     assert service.site_intake('Olá, quero um site') is None
     result.need = 'não informado'
     assert service.qualification_complete(result) is False
+
+
+def test_three_replies_pause_and_preserve_last_answer(monkeypatch):
+    monkeypatch.setattr(service.settings, 'whatsapp_bot_max_replies', 3)
+    for previous in (0, 1):
+        result = service.limit_reply(service.Answer(reply='Resposta útil', handoff=False, priority='media'), previous)
+        assert not result.handoff
+    result = service.limit_reply(service.Answer(reply='Resposta útil', handoff=False, priority='media'), 2)
+    assert result.handoff and result.priority == 'alta'
+    assert result.reply.startswith('Resposta útil') and 'Jefferson' in result.reply
+    result = service.limit_reply(service.Answer(reply='Encaminhado', handoff=True, priority='alta'), 2)
+    assert result.reply == 'Encaminhado'
