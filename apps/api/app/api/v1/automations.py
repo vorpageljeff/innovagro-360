@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.models.crm import Lead, LeadActivity, AutomationRule, AutomationReceipt
 from app.schemas.crm import RuleInput, RuleOutput, ReceiptOutput, SimulationInput
 from app.services.evolution import configured, evolution_request, incoming_message, matching_rule, rule_plan
-from app.services.whatsapp_ai import AIUnavailable, answer as ai_answer, readiness, qualification_complete, qualification_note, site_intake
+from app.services.whatsapp_ai import AIUnavailable, answer as ai_answer, readiness, qualification_complete, qualification_note, site_intake, test_contact_allowed
 from app.services.whatsapp_leads import excluded_phones
 
 router = APIRouter(prefix='/crm', tags=['Automações'])
@@ -22,6 +22,7 @@ async def ai_status(auth: Auth):
     missing = readiness()
     return {'configured': not missing, 'enabled': settings.whatsapp_ai_enabled,
             'bot_enabled': settings.evolution_bot_enabled, 'missing': missing,
+            'provider': settings.whatsapp_ai_provider, 'test_mode': settings.whatsapp_ai_test_mode,
             'model': settings.whatsapp_ai_model, 'daily_limit': settings.whatsapp_ai_daily_limit,
             'qualification_fields': settings.whatsapp_ai_required_fields.split(',')}
 
@@ -148,7 +149,7 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
         AutomationRule.enabled.is_(True)).order_by(AutomationRule.position, AutomationRule.created_at, AutomationRule.id))).scalars().all()
     rule = matching_rule(rules, text)
     # Explicit human/terminal flows always take precedence over AI.
-    if settings.whatsapp_ai_enabled and (rule is None or
+    if settings.whatsapp_ai_enabled and test_contact_allowed(phone) and (rule is None or
             not rule.handoff and rule.status not in ('sem_interesse', 'convertido')):
         receipt.state = 'ai_generating'
         # Reserve before the paid call; repeated webhooks must not generate twice.

@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,6 +20,10 @@ class Settings(BaseSettings):
     evolution_bot_enabled: bool = False
     evolution_excluded_phones: str = ''
     openai_api_key: str = ''
+    gemini_api_key: str = ''
+    whatsapp_ai_provider: Literal['openai', 'gemini'] = 'openai'
+    whatsapp_ai_test_mode: bool = False
+    whatsapp_ai_test_phones: str = ''
     whatsapp_ai_enabled: bool = False
     whatsapp_ai_model: str = ''
     whatsapp_ai_knowledge: str = Field(default='', max_length=8000)

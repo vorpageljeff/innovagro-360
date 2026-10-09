@@ -32,3 +32,11 @@ Campos essenciais configurados em `WHATSAPP_AI_REQUIRED_FIELDS=name,service,need
 Mensagens preparadas no formulário do site têm um cabeçalho e campos explícitos. Quando recebidas pelo webhook autenticado, e com os dados essenciais completos, entram na fila humana com nota de qualificação mesmo com IA/bot desabilitados, sem qualquer resposta automática. Campos são declarados pelo cliente, não dados verificados por uma fonte externa. Contatos encerrados e números excluídos não são reabertos. Recebimento repetido não duplica o histórico. O formulário sozinho não salva um lead; depende do cliente confirmar o envio no WhatsApp e do evento chegar ao Evolution.
 
 Dados comerciais podem ser preparados a partir do conteúdo aprovado do site. Ainda faltam chave e modelo para a geração real; publicação do formulário e do encaminhamento não remove a pausa global.
+
+## Gemini para testes — 08/10/2026
+
+Adaptador REST nativo Gemini com resposta JSON validada pelo mesmo contrato, memória e encaminhamento do provedor OpenAI. Configuração privada GEMINI_API_KEY, WHATSAPP_AI_PROVIDER=gemini e WHATSAPP_AI_MODEL. Chave nunca entra no frontend, repositório ou URL da chamada. Corpo e erros do provedor não são registrados pelo adaptador. Não há retry automático.
+
+Modo de testes WHATSAPP_AI_TEST_MODE=true e WHATSAPP_AI_TEST_PHONES limita geração aos telefones explicitamente escolhidos pelo titular e respectivas variantes brasileiras. Outros contatos continuam nos fluxos fixos existentes. Usar dados fictícios no plano gratuito, que não é indicado para dados pessoais/confidenciais de clientes. A autorização de testar não muda cobranças nem ativa faturamento no Google. O titular autorizou usar a chave já capturada, deixando substituição para depois.
+
+Chave autenticou HTTP 200. gemini-2.5-flash-lite listado pelo catálogo, mas geração recusada com 404 por indisponibilidade a novos usuários. gemini-3.5-flash-lite gerou resposta estruturada real HTTP 200 com os fatos comerciais atuais: site R$ 450, mensalidade sob orçamento, consultoria R$ 1.000 e execução/gestão sob orçamento. Não foi enviado WhatsApp nesse teste. Rotação da chave segue pendente; não publicar o valor.
