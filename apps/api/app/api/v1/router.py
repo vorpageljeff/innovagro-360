@@ -21,3 +21,6 @@ api_router.include_router(site_intake_router)
 
 from app.api.v1.whatsapp_messages import router as whatsapp_messages_router
 api_router.include_router(whatsapp_messages_router)
+
+from app.api.v1.instagram_messages import router as instagram_messages_router
+api_router.include_router(instagram_messages_router)

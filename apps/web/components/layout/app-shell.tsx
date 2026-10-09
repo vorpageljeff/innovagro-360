@@ -2,12 +2,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Bell, BriefcaseBusiness, Building2, CalendarDays, ChartNoAxesCombined, CircleDollarSign, FolderKanban, LayoutDashboard, MessageCircle, Plus, Search, Settings, Sparkles, UsersRound, type LucideIcon } from "lucide-react";
+import { Bell, BriefcaseBusiness, Building2, CalendarDays, ChartNoAxesCombined, CircleDollarSign, FolderKanban, Instagram, LayoutDashboard, MessageCircle, Plus, Search, Settings, Sparkles, UsersRound, type LucideIcon } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
 const groups: { label: string; items: NavItem[] }[] = [
   { label: "", items: [{ label: "Início", href: "/dashboard", icon: LayoutDashboard }] },
-  { label: "COMERCIAL", items: [{ label: "CRM", href: "/crm", icon: BriefcaseBusiness }, { label: "WhatsApp", href: "/whatsapp", icon: MessageCircle }, { label: "Agenda", href: "/agenda", icon: CalendarDays }] },
+  { label: "COMERCIAL", items: [{ label: "CRM", href: "/crm", icon: BriefcaseBusiness }, { label: "WhatsApp", href: "/whatsapp", icon: MessageCircle }, { label: "Instagram", href: "/instagram", icon: Instagram }, { label: "Agenda", href: "/agenda", icon: CalendarDays }] },
   { label: "OPERAÇÃO", items: [{ label: "Clientes", href: "/clientes", icon: Building2 }, { label: "Projetos", href: "/projetos", icon: FolderKanban }, { label: "Equipe", href: "/equipe", icon: UsersRound }] },
   { label: "FINANCEIRO", items: [{ label: "Visão financeira", href: "/financeiro", icon: CircleDollarSign }] },
   { label: "GESTÃO", items: [{ label: "Indicadores", href: "/indicadores", icon: ChartNoAxesCombined }] },
