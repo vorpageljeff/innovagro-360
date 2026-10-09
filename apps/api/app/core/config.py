@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     evolution_webhook_secret: str = ''
     evolution_bot_enabled: bool = False
     evolution_excluded_phones: str = ''
+    instagram_webhook_secret: str = ''
+    instagram_organization_id: str = ''
     openai_api_key: str = ''
     gemini_api_key: str = ''
     whatsapp_ai_provider: Literal['openai', 'gemini'] = 'openai'

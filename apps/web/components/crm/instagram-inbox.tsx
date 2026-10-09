@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ExternalLink, Instagram } from "lucide-react";
 import styles from "./whatsapp-leads.module.css";
 
-type Lead = { id: string; name: string; instagram: string; city: string; status: string; priority: string; sent_count: number; can_message: boolean };
-type Message = { id: string; direction: "outgoing"; text: string; at: string };
+type Lead = { id: string; name: string; instagram: string; city: string; status: string; priority: string; sent_count: number; received_count: number; can_message: boolean };
+type Message = { id: string; direction: "incoming" | "outgoing"; text: string; at: string; source?: "manual" | "webhook" };
 
 async function request(path: string, body?: unknown) {
   const response = await fetch(`/api/crm/${path}`, { cache: "no-store", ...(body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}) });
@@ -38,8 +38,10 @@ export function InstagramInbox() {
   useEffect(() => {
     if (!selected) return;
     setError(""); setNotice(""); setText(template.replaceAll("{empresa}", selected.name)); setRequestId(crypto.randomUUID());
-    void request(`instagram/leads/${selected.id}/conversation`).then(data => setMessages(data.messages)).catch(e => setError((e as Error).message));
+    const refresh = () => void request(`instagram/leads/${selected.id}/conversation`).then(data => setMessages(data.messages)).catch(e => setError((e as Error).message));
+    refresh(); const timer = setInterval(refresh, 5000); return () => clearInterval(timer);
   }, [selected, template]);
+  useEffect(() => { const timer = setInterval(() => void load(), 10000); return () => clearInterval(timer); }, [load]);
 
   const sentTotal = useMemo(() => leads.reduce((total, lead) => total + lead.sent_count, 0), [leads]);
   async function recordSent() {
@@ -62,16 +64,16 @@ export function InstagramInbox() {
       {loading ? <p>Carregando perfis…</p> : <div className={`${styles.inbox} ${selected ? styles.chatOpen : ""}`}>
         <aside className={styles.contactList} aria-label="Perfis do Instagram"><div className={styles.listHeading}><strong>Perfis</strong><span>{leads.length}</span></div>
           {leads.map(lead => <button key={lead.id} className={`${styles.contact} ${selected?.id === lead.id ? styles.activeContact : ""}`} onClick={() => setSelected(lead)}>
-            <span className={styles.avatar}><Instagram size={17} /></span><span className={styles.contactInfo}><strong>{lead.name}</strong><small>@{lead.instagram} · {lead.city}</small><span className={styles.preview}>{lead.sent_count ? `${lead.sent_count} envio(s) registrado(s)` : "Ainda não abordado pelo Instagram"}</span></span>
+            <span className={styles.avatar}><Instagram size={17} /></span><span className={styles.contactInfo}><strong>{lead.name}</strong><small>@{lead.instagram} · {lead.city}</small><span className={styles.preview}>{lead.received_count ? `${lead.received_count} mensagem(ns) recebida(s)` : lead.sent_count ? `${lead.sent_count} envio(s) registrado(s)` : "Ainda não abordado pelo Instagram"}</span></span>
           </button>)}
         </aside>
         <div className={styles.chatPane}>{!selected ? <div className={styles.chatPlaceholder}><h3>Envios pelo Instagram</h3><p>Escolha um perfil para preparar e acompanhar a abordagem.</p></div> : <div className={styles.chatContent}>
           <div className={styles.heading}><div><h2>{selected.name}</h2><p>@{selected.instagram} · {selected.city}</p></div><button className="btn" onClick={() => setSelected(null)}>Voltar à lista</button></div>
           <div className={styles.actions}><a className="btn" href={`https://www.instagram.com/${selected.instagram}/`} target="_blank" rel="noreferrer">Abrir perfil <ExternalLink size={14} /></a></div>
-          <div className={styles.chatHistory} aria-label="Histórico de envios">{messages.length ? messages.map(message => <article key={message.id} className={`${styles.bubble} ${styles.outgoing}`}><small>Voragon · Instagram</small><p>{message.text}</p><small>{new Date(message.at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</small></article>) : <p className={styles.empty}>Ainda não há envio registrado para este perfil.</p>}</div>
+          <div className={styles.chatHistory} aria-label="Conversa do Instagram">{messages.length ? messages.map(message => <article key={message.id} className={`${styles.bubble} ${message.direction === "outgoing" ? styles.outgoing : ""}`}><small>{message.direction === "outgoing" ? "Voragon" : selected.name} · Instagram</small><p>{message.text}</p><small>{new Date(message.at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</small></article>) : <p className={styles.empty}>Ainda não há mensagens para este perfil.</p>}</div>
           <label className="field">Mensagem<textarea rows={5} maxLength={1500} value={text} disabled={busy || !selected.can_message} onChange={e => setText(e.target.value)} /></label>
           <div className={styles.actions}><button className="btn" disabled={busy} onClick={() => setText(template.replaceAll("{empresa}", selected.name))}>Usar mensagem padrão</button><button className="btn primary" disabled={busy || !text.trim() || !selected.can_message} onClick={() => void recordSent()}>{busy ? "Registrando…" : "Confirmar que enviei no Instagram"}</button></div>
-          <p className={styles.hint}>Abra o perfil, envie a mensagem no Instagram e confirme aqui somente depois que ela aparecer na conversa. Assim o CRM não registra tentativas como envio.</p>
+          <p className={styles.hint}>As respostas recebidas aparecem automaticamente nesta conversa. Para uma nova abordagem manual, abra o perfil e confirme aqui somente depois que o envio aparecer no Instagram.</p>
         </div>}</div>
       </div>}
     </section>

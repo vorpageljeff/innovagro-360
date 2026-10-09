@@ -53,3 +53,20 @@ class AutomationReceipt(UUIDPrimaryKey, TimestampMixin, TenantMixin, Base):
     incoming: Mapped[str] = mapped_column(Text)
     reply: Mapped[str] = mapped_column(Text, default='')
     state: Mapped[str] = mapped_column(String(30), default='received')
+
+
+class InstagramMessage(UUIDPrimaryKey, TimestampMixin, TenantMixin, Base):
+    __tablename__ = 'crm_instagram_messages'
+    __table_args__ = (
+        UniqueConstraint('organization_id', 'message_id', name='uq_crm_instagram_message'),
+    )
+    message_id: Mapped[str] = mapped_column(String(200))
+    lead_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey('crm_leads.id', ondelete='RESTRICT'), index=True
+    )
+    instagram_scoped_user_id: Mapped[str] = mapped_column(String(64), index=True)
+    username: Mapped[str | None] = mapped_column(String(30), index=True)
+    direction: Mapped[str] = mapped_column(String(10))
+    text: Mapped[str] = mapped_column(Text, default='')
+    attachment_type: Mapped[str | None] = mapped_column(String(30))
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
