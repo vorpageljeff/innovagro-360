@@ -23,6 +23,9 @@ class TextInput(BaseModel):
 class DraftInput(TextInput):
     request_id: UUID
 
+class SendInput(DraftInput):
+    expected_phone: str = Field(min_length=10, max_length=16, pattern=r"^[1-9][0-9]+$")
+
 def template_id(org):
     return uuid5(org, 'whatsapp-message-template')
 def output(draft, outbound=None):
@@ -68,12 +71,13 @@ async def save_draft(lead_id: UUID, data: DraftInput, db: DB, auth: Auth):
     return output(data,existing)
 
 @router.post('/leads/{lead_id}/send')
-async def send(lead_id: UUID, data: DraftInput, db: DB, auth: Auth):
+async def send(lead_id: UUID, data: SendInput, db: DB, auth: Auth):
     owns_integration(auth);org=auth.organization_id;lead=await get_lead(db,org,lead_id)
     existing=await existing_send(db,org,data.request_id)
     if existing:
-        if existing.lead_id!=lead.id or existing.text!=data.text: raise HTTPException(409,'Envio já registrado com outros dados.')
+        if existing.lead_id!=lead.id or existing.text!=data.text or existing.phone!=data.expected_phone: raise HTTPException(409,'Envio já registrado com outros dados.')
         return {'state':existing.state,'id':existing.id}
+    if lead.phone != data.expected_phone: raise HTTPException(409,'O telefone do contato mudou. Reabra a conversa e confira o destinatário.')
     reason=blocked_reason(lead)
     if reason: raise HTTPException(409,reason)
     if not re.fullmatch(r'[1-9][0-9]{9,14}',lead.phone): raise HTTPException(422,'Telefone inválido.')
@@ -84,7 +88,7 @@ async def send(lead_id: UUID, data: DraftInput, db: DB, auth: Auth):
     inserted=(await db.execute(insert(WhatsAppOutbound).values(id=row_id,organization_id=org,lead_id=lead.id,request_id=data.request_id,phone=lead.phone,text=data.text,state='sending').on_conflict_do_nothing(constraint='uq_whatsapp_outbound_request').returning(WhatsAppOutbound.id))).scalar_one_or_none()
     if not inserted:
         existing=await existing_send(db,org,data.request_id)
-        if existing.lead_id!=lead.id or existing.text!=data.text: raise HTTPException(409,'Envio já registrado com outros dados.')
+        if existing.lead_id!=lead.id or existing.text!=data.text or existing.phone!=data.expected_phone: raise HTTPException(409,'Envio já registrado com outros dados.')
         return {'state':existing.state,'id':existing.id}
     await upsert_draft(db,org,lead.id,data)
     activity=LeadActivity(organization_id=org,lead_id=lead.id,event_key='manual-send:'+str(data.request_id),kind='nota',occurred_on=datetime.now(ZoneInfo('America/Sao_Paulo')).date(),note='Envio iniciado pelo WhatsApp empresarial. Confira o resultado antes de repetir.\n'+data.text)

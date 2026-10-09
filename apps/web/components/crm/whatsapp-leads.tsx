@@ -108,7 +108,7 @@ export function WhatsAppLeads() {
     if (!composing || !draft || !draft.text.trim() || sendLock.current) return;
     sendLock.current = true; setBusy(true); setChatError(""); setMessageNotice("");
     try {
-      const result = await request(`evolution/leads/${composing.id}/send`, undefined, { text: draft.text, request_id: draft.request_id });
+      const result = await request(`evolution/leads/${composing.id}/send`, undefined, { text: draft.text, request_id: draft.request_id, expected_phone: composing.phone });
       setDraft(old => old ? { ...old, state: result.state } : old);
       setMessageNotice(result.state === "sent" ? "Mensagem enviada pelo número empresarial e registrada no histórico." : "Envio sem confirmação. Confira no WhatsApp empresarial antes de preparar outro envio.");
       setConversation(await request(`evolution/leads/${composing.id}/conversation`));
@@ -176,7 +176,7 @@ export function WhatsAppLeads() {
       <label className="field">Mensagem<textarea value={text} rows={4} maxLength={1500} disabled={busy || !draft || !!draft.state} placeholder="Revise a mensagem para este contato" onChange={e => setDraft(old => old ? { ...old, text: e.target.value } : old)} /></label>
       <div className={styles.actions}>
         {draft?.state ? <button className="btn" disabled={busy || draft.state !== "sent"} onClick={() => { setDraft(old => old ? { ...old, request_id: crypto.randomUUID(), state: null, text: "" } : old); setMessageNotice(""); }}>Preparar nova mensagem</button> : <><button className="btn" disabled={busy || !draft || !template.trim()} onClick={() => setDraft(old => old ? { ...old, text: template.replaceAll("{empresa}", composing.name) } : old)}>Usar mensagem padrão</button><button className="btn" disabled={busy || !draft || !text.trim()} onClick={() => void saveMessage()}>Salvar rascunho</button></>}
-        <button className="btn primary" disabled={busy || !draft || !text.trim() || draft.state === "sent" || !composing.can_message} onClick={() => void sendMessage()}>{busy ? "Aguarde…" : draft?.state ? "Consultar resultado do envio" : "Enviar pelo empresarial"}</button>
+        <button className="btn primary" disabled={busy || !draft || !text.trim() || draft.state === "sent" || !composing.can_message || ["sem_interesse", "convertido"].includes(conversation?.status ?? "")} onClick={() => void sendMessage()}>{busy ? "Aguarde…" : draft?.state ? "Consultar resultado do envio" : "Enviar pelo empresarial"}</button>
       </div>
       <p className={styles.hint}>Atualiza a conversa a cada 5 segundos. Envios sem confirmação não são repetidos automaticamente.</p>
     </dialog>}

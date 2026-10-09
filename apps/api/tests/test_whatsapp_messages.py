@@ -35,7 +35,7 @@ def test_repeat_send_returns_prior_state_without_external_call(monkeypatch):
     from app.core.config import settings
     org=uuid4();lead_id=uuid4();req=uuid4();monkeypatch.setattr(settings,'evolution_organization_id',str(org))
     lead=SimpleNamespace(id=lead_id,phone='5511999999999',status='aguardando')
-    previous=SimpleNamespace(id=uuid4(),lead_id=lead_id,text='Olá',state='uncertain')
+    previous=SimpleNamespace(id=uuid4(),lead_id=lead_id,text='Olá',state='uncertain',phone='5511999999999')
     class DB:
         async def execute(self,query):
             assert org in query.compile().params.values()
@@ -43,9 +43,9 @@ def test_repeat_send_returns_prior_state_without_external_call(monkeypatch):
             return SimpleNamespace(scalar_one_or_none=lambda:result)
     async def fail(*args):pytest.fail('Duplicate must not access Evolution')
     monkeypatch.setattr(api,'evolution_request',fail)
-    result=asyncio.run(api.send(lead_id,api.DraftInput(text='Olá',request_id=req),DB(),SimpleNamespace(organization_id=org)))
+    result=asyncio.run(api.send(lead_id,api.SendInput(text='Olá',request_id=req,expected_phone='5511999999999'),DB(),SimpleNamespace(organization_id=org)))
     assert result['state']=='uncertain'
-    with pytest.raises(HTTPException) as error:asyncio.run(api.send(lead_id,api.DraftInput(text='Outro texto',request_id=req),DB(),SimpleNamespace(organization_id=org)))
+    with pytest.raises(HTTPException) as error:asyncio.run(api.send(lead_id,api.SendInput(text='Outro texto',request_id=req,expected_phone='5511999999999'),DB(),SimpleNamespace(organization_id=org)))
     assert error.value.status_code==409
 
 
@@ -59,5 +59,5 @@ def test_blocked_contacts_cannot_send(monkeypatch,status,phone):
             return SimpleNamespace(scalar_one_or_none=lambda:SimpleNamespace(id=lead_id,phone=phone,status=status) if 'FROM crm_leads' in str(query) else None)
     async def fail(*args):pytest.fail('Blocked contacts must not access Evolution')
     monkeypatch.setattr(api,'evolution_request',fail)
-    with pytest.raises(HTTPException) as error:asyncio.run(api.send(lead_id,api.DraftInput(text='Olá',request_id=uuid4()),DB(),SimpleNamespace(organization_id=org)))
+    with pytest.raises(HTTPException) as error:asyncio.run(api.send(lead_id,api.SendInput(text='Olá',request_id=uuid4(),expected_phone='5511999999999'),DB(),SimpleNamespace(organization_id=org)))
     assert error.value.status_code==409
