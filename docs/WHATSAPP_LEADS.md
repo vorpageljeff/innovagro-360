@@ -39,3 +39,11 @@ Jefferson determinou não responder a mensagens automáticas de outros bots. Tex
 Release d651494. 98 testes API passaram; restauração PostgreSQL isolada confirmou mensagem automática sem chamada IA/envio, mensagem humana posterior atendida, leitura pelo JID alternativo sem duplicidade e complementação CRM. Navegador validou a resposta real da Silva Móveis e a indicação de automação, sem enviar mensagens nem alterar leituras reais. Sem alteração de schema.
 
 Refinamento final da API ad5579e: avisos explícitos usam padrões de apresentação/declaração automática; mencionar interesse em criar atendimento ou mensagem automática não bloqueia o cliente. Total final de 100 testes aprovados, com os dois casos humanos adicionais. Frontend permanece d651494.
+
+## Acesso unificado ao composer — 09/10/2026
+
+Ver conversa no painel e Abrir chat na fila humana abrem a mesma caixa de entrada completa, substituindo o modal antigo somente de recibos. No histórico do contato do CRM, Abrir chat e responder no WhatsApp leva diretamente à conversa em /whatsapp?lead=UUID. A lista autenticada aceita lead_id para buscar exatamente o contato, sem depender da página atual. Resumo da qualificação continua disponível no chat.
+
+Ao abrir um contato cujo último rascunho já foi enviado, o campo Escreva sua mensagem começa vazio e habilitado, com novo UUID. O texto anterior continua no histórico; não é reenviado. Envio incerto/em andamento mantém o bloqueio de repetição existente. A tela rola até o chat ao abrir, e o histórico tem altura ajustada ao viewport para tornar o campo de resposta mais visível.
+
+Backend f2a62f6, frontend 20d2eed. 100 testes API e build Next.js isolado aprovados. Navegador conferiu mensagem real da Silva Móveis, composer vazio após envio anterior, abertura direta, painel → chat e CRM → chat. Botão de envio validado com requisição interceptada; nenhuma mensagem real durante esta atualização. Sem mudança de schema ou dados comerciais.
