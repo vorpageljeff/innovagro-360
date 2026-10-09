@@ -19,7 +19,7 @@ type Dashboard = {
   recent: Conversation[]; queue: QueueItem[];
 };
 const priorities: Record<string, string> = { urgente: "Urgente", alta: "Alta", media: "Média", baixa: "Baixa" };
-const states: Record<string, string> = { ai_cancelled: "Resposta da IA cancelada", ai_generating: "IA em processamento", ai_handoff: "IA encaminhou à equipe", sent: "Aceita pelo Evolution", paused: "Bot pausado", uncertain: "Envio sem confirmação", sending: "Envio iniciado", completed: "Fluxo concluído", no_rule: "Sem fluxo correspondente", received: "Recebida", unmatched: "Sem contato associado" };
+const states: Record<string, string> = { auto_reply_ignored: "Mensagem automática · sem resposta da IA", ai_cancelled: "Resposta da IA cancelada", ai_generating: "IA em processamento", ai_handoff: "IA encaminhou à equipe", sent: "Aceita pelo Evolution", paused: "Bot pausado", uncertain: "Envio sem confirmação", sending: "Envio iniciado", completed: "Fluxo concluído", no_rule: "Sem fluxo correspondente", received: "Recebida", unmatched: "Sem contato associado" };
 const connectionLabels: Record<string, string> = { open: "WhatsApp conectado", close: "WhatsApp desconectado", connecting: "Conectando ao WhatsApp", not_configured: "Configuração pendente" };
 const number = (value: number) => value.toLocaleString("pt-BR");
 function timestamp(value: string) { return new Date(value).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); }

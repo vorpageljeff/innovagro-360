@@ -89,3 +89,21 @@ def ai_may_handle_rule(rule):
     # Budget requests need qualification; explicit human/support rules still pause.
     terms = {normalize_text(term) for term in rule.contains.split('|') if term.strip()}
     return bool(terms) and terms <= {'1', 'orcamento', 'preco', 'valor'}
+
+
+def is_automatic_reply(text):
+    """Recognize explicit automated notices and common business auto-reply templates."""
+    normalized = normalize_text(text)
+    explicit = ('mensagem automatica', 'resposta automatica', 'atendimento automatico',
+                'sou um bot', 'sou o assistente virtual', 'sou um assistente virtual',
+                'sou a assistente virtual', 'sou uma assistente virtual',
+                'obrigado por entrar em contato', 'obrigada por entrar em contato')
+    if any(term in normalized for term in explicit):
+        return True
+    acknowledgment = re.search(r'\b(?:agradece|agradecemos) (?:o |seu |o seu )?contato\b', normalized)
+    if acknowledgment:
+        return True
+    unavailable = ('no momento nao estamos disponiveis', 'fora do horario de atendimento',
+                   'fora do nosso horario', 'nosso horario de atendimento')
+    return any(term in normalized for term in unavailable) and any(
+        term in normalized for term in ('retornaremos', 'responderemos', 'assim que possivel', 'mensagem automatica'))

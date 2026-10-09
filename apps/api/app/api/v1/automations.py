@@ -129,6 +129,11 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
     if inserted is None:
         return {'state': 'duplicate'}
     receipt = (await db.execute(select(AutomationReceipt).where(AutomationReceipt.id == receipt_id))).scalar_one()
+    from app.services.evolution import is_automatic_reply
+    if is_automatic_reply(text):
+        receipt.state = 'auto_reply_ignored'
+        await db.commit()
+        return {'state': receipt.state}
     intake = site_intake(text)
     if intake and qualification_complete(intake) and lead.status not in ('sem_interesse', 'convertido') and phone not in excluded_phones():
         from zoneinfo import ZoneInfo
@@ -185,10 +190,10 @@ async def webhook(request: Request, db: DB, x_webhook_secret: str = Header(defau
         used = (await db.execute(select(func.count(AutomationReceipt.id)).where(
             AutomationReceipt.organization_id == org,
             AutomationReceipt.created_at >= datetime.now(timezone.utc) - timedelta(days=1),
-            AutomationReceipt.state.notin_(['paused', 'no_rule', 'unmatched'])))).scalar_one()
+            AutomationReceipt.state.notin_(['paused', 'no_rule', 'unmatched', 'auto_reply_ignored'])))).scalar_one()
         history_query = select(AutomationReceipt).where(
             AutomationReceipt.organization_id == org, AutomationReceipt.lead_id == lead.id,
-            AutomationReceipt.id != receipt_id)
+            AutomationReceipt.id != receipt_id, AutomationReceipt.state != 'auto_reply_ignored')
         if settings.whatsapp_ai_test_mode and settings.whatsapp_ai_test_since:
             history_query = history_query.where(AutomationReceipt.created_at >= settings.whatsapp_ai_test_since)
         history = (await db.execute(history_query.order_by(

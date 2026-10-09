@@ -79,3 +79,20 @@ def test_foreign_organization_cannot_read_inbox(monkeypatch):
     with pytest.raises(HTTPException) as e:
         asyncio.run(api.inbox(None,SimpleNamespace(organization_id=uuid4())))
     assert e.value.status_code==404
+
+
+@pytest.mark.parametrize('text', [
+    '‎Silva Móveis agradece seu contato. Como podemos ajudar?',
+    'Agradecemos o seu contato! Em breve atenderemos.',
+    'Mensagem automática: estamos fora do horário.',
+    'Sou a assistente virtual da empresa.'
+])
+def test_automatic_business_replies_are_detected(text):
+    from app.services.evolution import is_automatic_reply
+    assert is_automatic_reply(text)
+
+
+@pytest.mark.parametrize('text', ['Oi, como posso ajudar?', 'Quero um orçamento', 'Tenho interesse em sistemas', 'Obrigado, vou falar com meu sócio'])
+def test_human_messages_do_not_match_bot_templates(text):
+    from app.services.evolution import is_automatic_reply
+    assert not is_automatic_reply(text)

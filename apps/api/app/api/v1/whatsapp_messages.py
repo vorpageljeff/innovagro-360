@@ -1,4 +1,5 @@
 import re
+import asyncio
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from uuid import UUID, uuid4, uuid5
@@ -10,7 +11,7 @@ from app.api.dependencies import Auth, DB
 from app.api.v1.automations import owns_integration
 from app.models.crm import Lead, LeadActivity
 from app.models.whatsapp_messages import WhatsAppDraft, WhatsAppOutbound
-from app.services.evolution import configured, evolution_request
+from app.services.evolution import configured, evolution_request, is_automatic_reply
 from app.services.whatsapp_leads import blocked_reason
 from app.services.crm import apply_activity
 from app.schemas.crm import ActivityInput
@@ -117,10 +118,16 @@ async def conversation(lead_id: UUID, db: DB, auth: Auth):
     messages=[];source='evolution';warning=''
     try:
         if not phone: raise HTTPException(409,'Telefone não cadastrado.')
-        result=await evolution_request('POST','chat/findMessages',{'where':{'key':{'remoteJid':phone+'@s.whatsapp.net'}},'page':1,'offset':100})
-        records=result.get('messages',{}).get('records',[])
-        if not isinstance(records,list): raise HTTPException(502,'Histórico inválido.')
-        for row in records[:100]:
+        results=await asyncio.gather(*[
+            evolution_request('POST','chat/findMessages',{'where':{'key':{field:phone+'@s.whatsapp.net'}},'page':1,'offset':100})
+            for field in ('remoteJid','remoteJidAlt')], return_exceptions=True)
+        valid=[r for r in results if isinstance(r,dict) and isinstance(r.get('messages',{}),dict)
+               and isinstance(r.get('messages',{}).get('records'),list)]
+        if not valid: raise HTTPException(502,'Histórico indisponível.')
+        if len(valid)<2: warning='Parte do histórico do WhatsApp está indisponível. Complementando com os registros do CRM.'
+        records={str(row.get('key',{}).get('id') or row.get('id')):row
+                 for result in valid for row in result['messages']['records'] if isinstance(row,dict)}
+        for row in records.values():
             key=row.get('key',{});body=row.get('message',{})
             text=body.get('conversation') or body.get('extendedTextMessage',{}).get('text')
             if not text:
@@ -129,7 +136,7 @@ async def conversation(lead_id: UUID, db: DB, auth: Auth):
             if not text: text='[Mensagem não textual]'
             try: at=datetime.fromtimestamp(int(row.get('messageTimestamp',0)),timezone.utc)
             except (ValueError,TypeError,OverflowError): continue
-            messages.append({'id':str(key.get('id') or row.get('id')),'direction':'outgoing' if key.get('fromMe') else 'incoming','text':str(text)[:10000],'at':at,'state':'recorded'})
+            messages.append({'id':str(key.get('id') or row.get('id')),'direction':'outgoing' if key.get('fromMe') else 'incoming','text':str(text)[:10000],'at':at,'state':'automatic' if not key.get('fromMe') and is_automatic_reply(str(text)) else 'recorded'})
     except (HTTPException,AttributeError,TypeError):
         source='crm';warning='WhatsApp indisponível agora. Exibindo o histórico salvo no CRM.'
         receipts=(await db.execute(select(AutomationReceipt).where(AutomationReceipt.organization_id==auth.organization_id,AutomationReceipt.lead_id==lead.id).order_by(AutomationReceipt.created_at.desc()).limit(100))).scalars().all()
@@ -144,6 +151,18 @@ async def conversation(lead_id: UUID, db: DB, auth: Auth):
     visible_ids={m['id'] for m in visible if m['direction']=='incoming'}
     receipts=(await db.execute(select(AutomationReceipt).where(AutomationReceipt.organization_id==auth.organization_id,
         AutomationReceipt.lead_id==lead.id).order_by(AutomationReceipt.created_at.desc()).limit(100))).scalars().all()
+    # Evolution may store incoming messages under a privacy LID rather than the phone JID.
+    # Keep the authoritative CRM receipts visible even when the provider query misses them.
+    known_ids={m['id'] for m in messages}
+    for r in receipts:
+        if r.message_id not in known_ids and str(r.id)+':in' not in known_ids:
+            messages.append({'id':str(r.id)+':in','direction':'incoming','text':r.incoming,'at':r.created_at,'state':r.state})
+        if r.reply and not any(m['direction']=='outgoing' and m['text']==r.reply and
+                abs((m['at']-r.created_at).total_seconds()) < 120 for m in messages):
+            messages.append({'id':str(r.id)+':out','direction':'outgoing','text':r.reply,'at':r.created_at,'state':r.state})
+    messages.sort(key=lambda m:(m['at'],m['id']))
+    visible=messages[-100:]
+    visible_ids={m['id'] for m in visible if m['direction']=='incoming'}
     read_ids=[r.id for r in receipts if r.message_id in visible_ids or str(r.id)+':in' in visible_ids]
     return {'lead_id':lead.id,'messages':visible,'read_ids':read_ids,'bot_paused':paused,'status':status,'source':source,'warning':warning}
 
