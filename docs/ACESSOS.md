@@ -195,3 +195,5 @@ Validação: 90 testes API, build Next.js de fonte versionada isolada, PostgreSQ
 ## Correção do histórico e respostas automáticas — 09/10/2026
 
 Backend release d651494, imagem voragon-crm-api:fix-d651494, schema 20261009_0006 preservado. Frontend mesma fonte d651494, deployment dpl_FYAtqyPEuvnF7APHoLdMARsZx79Z. Consulta do chat pelos identificadores remoto e alternativo do Evolution; registros CRM complementam mensagens faltantes. Resposta real da Silva Móveis confirmada na API e no navegador, sem duplicação. Regra autorizada impede geração/envio para avisos automáticos reconhecidos, preserva histórico e permite mensagem humana posterior. 98 testes e PostgreSQL isolado aprovados. Nenhum envio WhatsApp durante a correção. Detalhes em WHATSAPP_LEADS.md.
+
+Refinamento do detector publicado na API em ad5579e (imagem voragon-crm-api:fix-ad5579e): pedidos humanos sobre atendimento/mensagem automática não são tratados como avisos de bot. 100 testes aprovados e detector validado na imagem. Frontend permanece d651494; resposta real também conferida no endereço de produção. Sem alteração de dados existentes ou schema.
